@@ -1,4 +1,4 @@
-﻿namespace Content.Shared.Rounding
+namespace Content.Shared.Rounding
 {
     public static class ContentHelpers
     {
@@ -37,6 +37,42 @@
             var toOne = actual / max;
             return (int) Math.Ceiling(toOne * (levels - 2));
         }
+
+        // WD EDIT START
+        /// <summary>
+        ///     See <see cref="RoundToLevels(double, double, int)"/>
+        /// </summary>
+        /// <remarks>
+        ///     Special behaviour if <paramref name="levels"/> is equal to two: returns zero only if <paramref name="actual"/> is zero, otherwise returns <paramref name="levels"/> - 1 (which is just 1).
+        ///     <para/>
+        ///     <see cref="RoundToLevels(double, double, int)"/> has the reverse behaviour: it returns one only if <paramref name="actual"/> is one.
+        /// </remarks>
+        /// <param name="levels">The amount of levels to subdivide into.</param>
+        /// <returns>An integer from 0 to <paramref name="levels" />-1.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown if levels is less than 1.
+        /// </exception>
+        public static int RoundToLevelsAlt(double actual, double max, int levels)
+        {
+            if (levels <= 0)
+            {
+                throw new ArgumentException("Levels must be greater than 0.", nameof(levels));
+            }
+
+            if (actual <= 0)
+            {
+                return 0;
+            }
+
+            if (actual >= max || levels == 2)
+            {
+                return levels - 1;
+            }
+
+            var toOne = actual / max;
+            return (int) Math.Ceiling(toOne * (levels - 2));
+        }
+        //WD EDIT END
 
         /// <summary>
         /// Returns the segment <paramref name="actual"/> lies on on a decimal scale from 0 to <paramref name="max"/> divided into
