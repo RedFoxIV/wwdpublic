@@ -55,6 +55,10 @@
       Steel: 185
   - type: StaticPrice
     price: 20
+  - type: Tag
+    tags:
+    - GasTank
+    - BackpackAttachable
 
 - type: entity
   abstract: true

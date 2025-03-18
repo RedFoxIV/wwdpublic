@@ -22,3 +22,8 @@
 - type: Tag
   id: GrenadeTrapPart
 
+- type: Tag
+  id: GasTank
+
+- type: Tag
+  id: BackpackAttachable

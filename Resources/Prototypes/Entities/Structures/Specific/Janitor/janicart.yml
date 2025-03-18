@@ -205,7 +205,7 @@
               - TrashBag
           priority: 3 # Higher than drinking priority
     - type: ItemSlotPicker # wwdp
-      itemSlots:
+      slots:
       - mop_slot
       - plunger_slot
       - trashbag_slot

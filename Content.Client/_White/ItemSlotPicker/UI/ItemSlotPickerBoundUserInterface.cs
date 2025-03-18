@@ -36,6 +36,7 @@ public sealed class ItemSlotPickerBoundUserInterface : BoundUserInterface
 
     protected override void Open()
     {
+        base.Open();
         _menu = new EntityCenteredRadialMenu(Owner);
         _menu.OnClose += Close;
         _menu.CloseButtonStyleClass = "RadialMenuCloseButton";

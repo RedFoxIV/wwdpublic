@@ -1,6 +1,7 @@
 - type: entity
   parent: [Clothing, ContentsExplosionResistanceBase]
-  id: ClothingBackpack
+  id: BaseClothingBackpack
+  abstract: true
   name: backpack
   description: You wear this on your back and put items into it.
   components:
@@ -20,6 +21,8 @@
   - type: Storage
     grid:
     - 0,0,6,3
+    - 8,0,10,3  # WWDP
+    #- 12,0,13,3 # WWDP
     maxItemSize: Huge
   - type: ContainerContainer
     containers:
@@ -39,6 +42,32 @@
     mirrorClothingModifier: false
     sprintModifier: 0.85
     walkModifier: 0.85
+
+- type: entity
+  parent: BaseClothingBackpack
+  id: ClothingBackpack
+  name: backpack
+  description: You wear this on your back and put items into it.
+  components:
+  - type: ItemSlotPicker
+    autoTakeIfSingle: true
+    slots:
+    - gasTankSlot
+    - gasTankSlot2
+  - type: ItemSlotAction
+    slots:
+    - gasTankSlot
+    - gasTankSlot2
+  - type: ItemSlots
+    slots:
+      gasTankSlot:
+        name: backpack-slot-component-slot-name-gas-tank
+        grantItemActions: true
+        whitelist:
+          tags:
+            - GasTank
+            - Pickaxe
+            - BackpackAttachable
 
 - type: entity
   parent: ClothingBackpack

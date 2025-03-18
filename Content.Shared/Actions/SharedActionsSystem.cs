@@ -3,9 +3,11 @@ using System.Linq;
 using Content.Shared.ActionBlocker;
 using Content.Shared.Actions.Events;
 using Content.Shared.Administration.Logs;
+using Content.Shared.Clothing.Components;
 using Content.Shared.Database;
 using Content.Shared.Hands;
 using Content.Shared.Interaction;
+using Content.Shared.Inventory;
 using Content.Shared.Inventory.Events;
 using Content.Shared.Mind;
 using Content.Shared.Rejuvenate;
@@ -33,6 +35,7 @@ public abstract class SharedActionsSystem : EntitySystem
     [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
     [Dependency] private readonly ActionContainerSystem _actionContainer = default!;
     [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
+    [Dependency] private readonly InventorySystem _inventory = default!;
 
     public override void Initialize()
     {
@@ -896,6 +899,7 @@ public abstract class SharedActionsSystem : EntitySystem
         if (!Resolve(performer, ref comp, false))
             return;
 
+        RaiseLocalEvent(container, new ResetItemActionsEvent(performer, container));
         foreach (var actionId in comp.Actions.ToArray())
         {
             if (!TryGetActionData(actionId, out var action))
@@ -1094,4 +1098,26 @@ public abstract class SharedActionsSystem : EntitySystem
         action.EntityIcon = icon;
         Dirty(uid, action);
     }
+
+    // WWDP EDIT START
+    /// <summary>
+    /// Remove all actions given by an item and poll said item for new actions again.
+    /// Essentially refreshes the actions provided by the specified item.
+    /// </summary>
+    public void ForceActionRequery(EntityUid user, EntityUid item, ActionsComponent? actions = null)
+    {
+        if (!Resolve(user, ref actions))
+            return;
+
+        RemoveProvidedActions(user, item, actions);
+        SlotFlags? flags = null;
+        if(TryComp<ClothingComponent>(item, out var clothing) &&
+           clothing.InSlot is string slotId &&
+           _inventory.TryGetSlot(user, slotId, out var slotDef))
+        {
+            flags = slotDef.SlotFlags;
+        }
+        var ev = new GetItemActionsEvent(_actionContainer, user, item, flags);
+    }
+    // WWDP EDIT END
 }

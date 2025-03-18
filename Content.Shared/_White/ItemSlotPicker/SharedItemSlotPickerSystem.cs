@@ -4,6 +4,7 @@ using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Hands.Components;
 using Content.Shared.Interaction;
 using Robust.Shared.Containers;
+using Robust.Shared.Localization;
 using Robust.Shared.Serialization;
 using System;
 using System.Collections.Generic;
@@ -43,23 +44,69 @@ public abstract class SharedItemSlotPickerSystem : EntitySystem
             return;
 
         args.Handled = true;
+        List<ItemSlot> OccupiedSlots = new(comp.ItemSlots.Count);
+        List<ItemSlot> FreeSlots = new(comp.ItemSlots.Count);
+        foreach(var slotId in comp.ItemSlots)
+        {
+            if(!_itemSlots.TryGetSlot(uid, slotId, out var slot, slots))
+                continue;
+            if (slot.HasItem)
+                OccupiedSlots.Add(slot);
+            else
+                FreeSlots.Add(slot);
+        }
 
         if (hands.ActiveHandEntity is EntityUid item)
-            foreach (var slot in comp.ItemSlots)
-                if (_itemSlots.TryInsert(uid, slot, item, user, slots, true))
+            foreach (var slot in FreeSlots)
+            {
+                if (TryInsert(uid, slot, item, user))
                     return; // I wish this altverb bullshit wasn't a thing.
-
+            }
+        if(comp.AutoTakeIfSingle && OccupiedSlots.Count == 1)
+        {
+            TryEject(uid, OccupiedSlots[0], user, comp, slots);
+            return;
+        }
         _ui.TryToggleUi(uid, ItemSlotPickerKey.Key, user);
     }
 
     protected virtual void OnMessage(EntityUid uid, ItemSlotPickerComponent comp, ItemSlotPickerSlotPickedMessage args)
     {
-        if (!comp.ItemSlots.Contains(args.SlotId) ||
+        if (!TryComp<ItemSlotsComponent>(uid, out var slots) ||
+            !comp.ItemSlots.Contains(args.SlotId) ||
             !_itemSlots.TryGetSlot(uid, args.SlotId, out var slot))
             return;
+        //_itemSlots.TryEjectToHands(uid, slot, args.Actor, true);
+        TryEject(uid, slot, args.Actor, comp, slots);
+        if(comp.AutoClose)
+            _ui.CloseUi(uid, ItemSlotPickerKey.Key, args.Actor);
+    }
 
-        _itemSlots.TryEjectToHands(uid, slot, args.Actor, true);
-        _ui.CloseUi(uid, ItemSlotPickerKey.Key, args.Actor);
+    protected virtual bool TryInsert(EntityUid uid, ItemSlot slot, EntityUid item, EntityUid user)
+    {
+        return _itemSlots.TryInsert(uid, slot, item, user, true);
+    }
+
+    protected virtual bool TryEject(EntityUid uid, ItemSlot slot, EntityUid user, ItemSlotPickerComponent? comp = null, ItemSlotsComponent? slotsComp = null)
+    {
+        if (!Resolve(uid, ref comp) ||
+            !Resolve(uid, ref slotsComp))
+            return false;
+
+        if (comp.CloseOnLast)
+        {
+            int count = 0;
+            foreach (var slotId in comp.ItemSlots)
+            {
+                if (_itemSlots.TryGetSlot(uid, slotId, out var _slot, slotsComp) && _slot.HasItem)
+                    count++;
+                if (count > 1)
+                    break; // we only care whether it's 1 or more
+            }
+            if(count == 1)
+                _ui.CloseUi(uid, ItemSlotPickerKey.Key, user);
+        }
+        return _itemSlots.TryEjectToHands(uid, slot, user, true);
     }
 }
 [Serializable, NetSerializable]

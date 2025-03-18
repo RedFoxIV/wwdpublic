@@ -271,9 +271,8 @@ namespace Content.Server.Atmos.EntitySystems
             owner ??= component.User;
             if (Deleted(component.Owner))return null;
             if (owner != null) return CompOrNull<InternalsComponent>(owner.Value);
-            return _containers.TryGetContainingContainer(component.Owner, out var container)
-                ? CompOrNull<InternalsComponent>(container.Owner)
-                : null;
+            InternalsComponent? outcomp = null;
+            return _containers.TryFindComponentOnEntityContainerOrParent(component.Owner, GetEntityQuery<InternalsComponent>(), ref outcomp) ? outcomp : null;
         }
 
         public void AssumeAir(Entity<GasTankComponent> ent, GasMixture giver)

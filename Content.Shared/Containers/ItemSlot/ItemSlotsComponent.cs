@@ -5,6 +5,7 @@ using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Content.Shared.Containers.ItemSlots
 {
@@ -227,6 +228,7 @@ namespace Content.Shared.Containers.ItemSlots
 
         // Convenience properties
         public bool HasItem => ContainerSlot?.ContainedEntity != null;
+        [MemberNotNullWhen(true, nameof(HasItem))] // WWDP EDIT // COME ON, IT'S BASIC DECENCY
         public EntityUid? Item => ContainerSlot?.ContainedEntity;
 
         /// <summary>
@@ -245,6 +247,9 @@ namespace Content.Shared.Containers.ItemSlots
         /// <summary>
         ///     Lavaland Change: Can light go through the container of this ItemSlot?
         /// </summary>
+
+        [DataField]                             // WWDP EDIT
+        public bool GrantItemActions = false;  // WWDP EDIT
 
         [DataField]
         [Access(typeof(ItemSlotsSystem), Other = AccessPermissions.ReadWriteExecute)]
@@ -269,6 +274,7 @@ namespace Content.Shared.Containers.ItemSlots
             Swap = other.Swap;
             Priority = other.Priority;
             OccludesLight = other.OccludesLight; // Lavaland Change
+            GrantItemActions = other.GrantItemActions; // WWDP EDIT
         }
     }
 

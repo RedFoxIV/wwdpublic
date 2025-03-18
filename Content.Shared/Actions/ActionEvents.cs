@@ -75,6 +75,18 @@ public sealed class GetItemActionsEvent : EntityEventArgs
     }
 }
 
+// WWDP EDIT START
+/// <summary>
+/// This event tells the entity to remove all actions from other items that it added.
+/// Raised after the item's actions are removed, so most stuff doesn't need to handle this.
+/// </summary>
+public sealed class ResetItemActionsEvent(EntityUid user, EntityUid provider) : EntityEventArgs
+{
+    public EntityUid User = user;
+    public EntityUid Provider = provider;
+}
+// WWDP EDIT END
+
 /// <summary>
 ///     Event used to communicate with the server that a client wishes to perform some action.
 /// </summary>

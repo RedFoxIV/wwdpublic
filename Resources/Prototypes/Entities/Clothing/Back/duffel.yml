@@ -1,5 +1,5 @@
 - type: entity
-  parent: ClothingBackpack
+  parent: BaseClothingBackpack
   id: ClothingBackpackDuffel
   name: duffel bag
   description: A large duffel bag for holding extra things.
@@ -10,6 +10,7 @@
     maxItemSize: Huge
     grid:
     - 0,0,7,4
+    - 9,0,12,7 # WWDP
   - type: ClothingSpeedModifier
     walkModifier: 1
     sprintModifier: 0.9

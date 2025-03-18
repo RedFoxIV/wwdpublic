@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Content.Shared.ActionBlocker;
+using Content.Shared.Actions;
 using Content.Shared.Administration.Logs;
 using Content.Shared.Database;
 using Content.Shared.Destructible;
@@ -33,6 +34,8 @@ namespace Content.Shared.Containers.ItemSlots
         [Dependency] private readonly SharedHandsSystem _handsSystem = default!;
         [Dependency] private readonly SharedAudioSystem _audioSystem = default!;
         [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
+        [Dependency] private readonly SharedActionsSystem _action = default!;
+        [Dependency] private readonly ActionContainerSystem _actionContainer = default!;
 
         public override void Initialize()
         {
@@ -57,6 +60,9 @@ namespace Content.Shared.Containers.ItemSlots
             SubscribeLocalEvent<ItemSlotsComponent, ComponentHandleState>(HandleItemSlotsState);
 
             SubscribeLocalEvent<ItemSlotsComponent, ItemSlotButtonPressedEvent>(HandleButtonPressed);
+
+            SubscribeLocalEvent<ItemSlotsComponent, ResetItemActionsEvent>(ResetItemSlotActionsEvent); // WWDP EDIT
+            SubscribeLocalEvent<ItemSlotsComponent, GetItemActionsEvent>(GetItemSlotActionsEvent); // WWDP EDIT
         }
 
         #region ComponentManagement
@@ -244,6 +250,7 @@ namespace Content.Shared.Containers.ItemSlots
             if (inserted != null && inserted.Value && user != null)
                 _adminLogger.Add(LogType.Action, LogImpact.Low, $"{ToPrettyString(user.Value)} inserted {ToPrettyString(item)} into {slot.ContainerSlot?.ID + " slot of "}{ToPrettyString(uid)}");
 
+            RequeryActionsIfEquipped(uid); // WWDP EDIT 
             _audioSystem.PlayPredicted(slot.InsertSound, uid, excludeUserAudio ? user : null);
         }
 
@@ -480,6 +487,7 @@ namespace Content.Shared.Containers.ItemSlots
             if (ejected != null && ejected.Value && user != null)
                 _adminLogger.Add(LogType.Action, LogImpact.Low, $"{ToPrettyString(user.Value)} ejected {ToPrettyString(item)} from {slot.ContainerSlot?.ID + " slot of "}{ToPrettyString(uid)}");
 
+            RequeryActionsIfEquipped(uid); // WWDP EDIT
             _audioSystem.PlayPredicted(slot.EjectSound, uid, excludeUserAudio ? user : null);
         }
 
@@ -732,6 +740,52 @@ namespace Content.Shared.Containers.ItemSlots
                 TryInsertFromHand(uid, slot, args.Actor);
         }
         #endregion
+
+        //WWDP EDIT START
+        private void ResetItemSlotActionsEvent(EntityUid uid, ItemSlotsComponent component, ResetItemActionsEvent args)
+        {
+            RemoveAllItemSlotActions(args.User, component);
+        }
+
+        private void RemoveAllItemSlotActions(EntityUid user, ItemSlotsComponent component)
+        {
+            foreach (var slot in component.Slots.Values)
+            {
+                if (slot.Item is not EntityUid item)
+                    continue;
+                _action.RemoveProvidedActions(user, item);
+            }
+        }
+
+        private void GetItemSlotActionsEvent(EntityUid uid, ItemSlotsComponent component, GetItemActionsEvent args)
+        {
+            AddAllItemSlotActions(component, args);
+        }
+
+        private void AddAllItemSlotActions(ItemSlotsComponent component, GetItemActionsEvent args)
+        {
+            foreach (var slot in component.Slots.Values)
+            {
+                if (!slot.GrantItemActions ||
+                    slot.Item is not EntityUid item)
+                    continue;
+
+                var ev = new GetItemActionsEvent(_actionContainer, args.User, item, args.SlotFlags);
+                RaiseLocalEvent(item, ev);
+                _action.GrantActions(args.User, ev.Actions, item);
+            }
+        }
+
+        private void RequeryActionsIfEquipped(EntityUid uid)
+        {
+            if (_containers.TryGetContainingContainer(uid, out var container) &&
+                TryComp<ActionsComponent>(container.Owner, out var actionscomp))
+            {
+                _action.ForceActionRequery(container.Owner, uid, actionscomp);
+            }
+        }
+
+        // WWDP EDIT END
 
         /// <summary>
         ///     Eject items from (some) slots when the entity is destroyed.
