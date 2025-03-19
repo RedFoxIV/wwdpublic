@@ -43,6 +43,7 @@
     sprintModifier: 0.85
     walkModifier: 0.85
 
+# only the actual backpacks have itemslots, not satchels nor duffelbags
 - type: entity
   parent: BaseClothingBackpack
   id: ClothingBackpack
@@ -53,11 +54,9 @@
     autoTakeIfSingle: true
     slots:
     - gasTankSlot
-    - gasTankSlot2
   - type: ItemSlotAction
     slots:
     - gasTankSlot
-    - gasTankSlot2
   - type: ItemSlots
     slots:
       gasTankSlot:
