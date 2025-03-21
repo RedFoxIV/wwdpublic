@@ -11,6 +11,12 @@ using static Robust.Client.UserInterface.Control;
 using System.Numerics;
 using Content.Shared._White.ItemSlotPicker;
 using Content.Shared._White.ItemSlotPicker.UI;
+using Content.Client._White.UI.ViewportBoundRadialMenu;
+using Robust.Client.UserInterface;
+using Content.Shared.Inventory;
+using Content.Shared.Clothing.Components;
+using Content.Client.UserInterface.Systems.Inventory.Controls;
+using Content.Client.UserInterface.ControlExtensions;
 
 namespace Content.Client._White.ItemSlotPicker.UI;
 
@@ -20,9 +26,11 @@ public sealed class ItemSlotPickerBoundUserInterface : BoundUserInterface
 {
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IEyeManager _eye = default!;
+    private IUserInterfaceManager _ui = default!;
 
     private readonly ItemSlotsSystem _itemSlots;
     private readonly SharedTransformSystem _transform;
+    private readonly InventorySystem _inventory;
 
     private RadialMenu? _menu;
     private RadialContainer? _layer;
@@ -31,13 +39,28 @@ public sealed class ItemSlotPickerBoundUserInterface : BoundUserInterface
     {
         IoCManager.InjectDependencies(this);
         _itemSlots = EntMan.System<ItemSlotsSystem>();
+        _inventory = EntMan.System<InventorySystem>();
         _transform = EntMan.System<SharedTransformSystem>();
     }
 
     protected override void Open()
     {
+        _ui ??= IoCManager.Resolve<IUserInterfaceManager>();
         base.Open();
-        _menu = new EntityCenteredRadialMenu(Owner);
+        if (EntMan.TryGetComponent<ClothingComponent>(Owner, out var clothing) &&
+            clothing.InSlot is not null &&
+           _inventory.TryGetSlot(_transform.GetParentUid(Owner), clothing.InSlot, out var slotDef) &&
+           _ui.ActiveScreen!.GetControlOfType<InventoryDisplay>()[0]!.TryGetButton(clothing.InSlot, out var button))
+        {
+            _menu = new ParentBoundRadialMenu();
+            _ui.ActiveScreen!.GetWidget<MainViewport>()!.Parent!.AddChild(_menu);
+            LayoutContainer.SetPosition(_menu, button!.Position);
+        }
+        else
+        {
+            _menu = new EntityCenteredRadialMenu(Owner);
+            _ui.ActiveScreen!.GetWidget<MainViewport>()!.Parent!.AddChild(_menu);
+        }
         _menu.OnClose += Close;
         _menu.CloseButtonStyleClass = "RadialMenuCloseButton";
         _menu.BackButtonStyleClass = "RadialMenuBackButton";
@@ -100,7 +123,7 @@ public sealed class ItemSlotPickerBoundUserInterface : BoundUserInterface
 }
 
 [Virtual]
-public class EntityCenteredRadialMenu : RadialMenu
+public class EntityCenteredRadialMenu : ParentBoundRadialMenu
 {
     public EntityUid Entity;
     [Dependency] private readonly IClyde _clyde = default!;
@@ -131,9 +154,10 @@ public class EntityCenteredRadialMenu : RadialMenu
     {
         base.FrameUpdate(args);
         if (_entMan.Deleted(Entity) ||
-            !_entMan.TryGetComponent<TransformComponent>(Entity, out var transform))
+            Parent is null ||
+            !_entMan.TryGetComponent<TransformComponent>(Entity, out var transforam))
             return;
-        var pos = _eye.WorldToScreen(_transform.GetWorldPosition(Entity)) / _clyde.ScreenSize;
+        var pos = _eye.WorldToScreen(_transform.GetWorldPosition(Entity)) / Parent.PixelSize;
         if (pos == _cachedPos)
             return;
         _cachedPos = pos;

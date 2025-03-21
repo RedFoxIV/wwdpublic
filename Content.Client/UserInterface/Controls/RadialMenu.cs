@@ -1,6 +1,10 @@
+using Content.Client.Viewport;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.CustomControls;
+using Robust.Shared.Map;
+using Robust.Shared.Timing;
 using System.Linq;
 using System.Numerics;
 
@@ -9,6 +13,8 @@ namespace Content.Client.UserInterface.Controls;
 [Virtual]
 public class RadialMenu : BaseWindow
 {
+    protected readonly IUserInterfaceManager _uiManager;
+
     /// <summary>
     /// Contextual button used to traverse through previous layers of the radial menu
     /// </summary>
@@ -70,6 +76,7 @@ public class RadialMenu : BaseWindow
     /// </remarks>
     public RadialMenu()
     {
+        _uiManager = IoCManager.Resolve<IUserInterfaceManager>();
         // Hide all starting children (if any) except the first (this is the active layer)
         if (ChildCount > 1)
         {
@@ -92,7 +99,7 @@ public class RadialMenu : BaseWindow
         OnChildAdded += child => child.Visible = (GetCurrentActiveLayer() == child);
     }
 
-    private Control? GetCurrentActiveLayer()
+    protected Control? GetCurrentActiveLayer() // WWDP EDIT private -> protected
     {
         var children = Children.Where(x => x != ContextualButton);
 
