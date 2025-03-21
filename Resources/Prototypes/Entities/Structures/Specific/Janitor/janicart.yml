@@ -178,6 +178,66 @@
             tags:
               - WetFloorSign
           priority: 7
+        wetfloorsign_slot5:
+          name: janitorial-trolley-slot-component-slot-name-sign
+          whitelist:
+            tags:
+              - WetFloorSign
+          priority: 7
+        wetfloorsign_slot6:
+          name: janitorial-trolley-slot-component-slot-name-sign
+          whitelist:
+            tags:
+              - WetFloorSign
+          priority: 7
+        wetfloorsign_slot7:
+          name: janitorial-trolley-slot-component-slot-name-sign
+          whitelist:
+            tags:
+              - WetFloorSign
+          priority: 7
+        wetfloorsign_slot8:
+          name: janitorial-trolley-slot-component-slot-name-sign
+          whitelist:
+            tags:
+              - WetFloorSign
+          priority: 7
+        wetfloorsign_slot9:
+          name: janitorial-trolley-slot-component-slot-name-sign
+          whitelist:
+            tags:
+              - WetFloorSign
+          priority: 7
+        wetfloorsign_slot10:
+          name: janitorial-trolley-slot-component-slot-name-sign
+          whitelist:
+            tags:
+              - WetFloorSign
+          priority: 7
+        wetfloorsign_slot11:
+          name: janitorial-trolley-slot-component-slot-name-sign
+          whitelist:
+            tags:
+              - WetFloorSign
+          priority: 7
+        wetfloorsign_slot12:
+          name: janitorial-trolley-slot-component-slot-name-sign
+          whitelist:
+            tags:
+              - WetFloorSign
+          priority: 7
+        wetfloorsign_slot13:
+          name: janitorial-trolley-slot-component-slot-name-sign
+          whitelist:
+            tags:
+              - WetFloorSign
+          priority: 7
+        wetfloorsign_slot14:
+          name: janitorial-trolley-slot-component-slot-name-sign
+          whitelist:
+            tags:
+              - WetFloorSign
+          priority: 7
         lightreplacer_slot:
           name: janitorial-trolley-slot-component-slot-name-lightreplacer
           whitelist:
@@ -216,6 +276,16 @@
       - wetfloorsign_slot2
       - wetfloorsign_slot3
       - wetfloorsign_slot4
+      - wetfloorsign_slot5
+      - wetfloorsign_slot6
+      - wetfloorsign_slot7
+      - wetfloorsign_slot8
+      - wetfloorsign_slot9
+      - wetfloorsign_slot10
+      - wetfloorsign_slot11
+      - wetfloorsign_slot12
+      - wetfloorsign_slot13
+      - wetfloorsign_slot14
     - type: Fixtures
       fixtures:
         fix1:
