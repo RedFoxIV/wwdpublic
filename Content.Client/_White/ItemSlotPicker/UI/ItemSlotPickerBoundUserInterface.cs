@@ -17,6 +17,8 @@ using Content.Shared.Inventory;
 using Content.Shared.Clothing.Components;
 using Content.Client.UserInterface.Systems.Inventory.Controls;
 using Content.Client.UserInterface.ControlExtensions;
+using Content.Client.UserInterface.Systems.Inventory;
+using Content.Client.UserInterface.Systems.Hotbar.Widgets;
 
 namespace Content.Client._White.ItemSlotPicker.UI;
 
@@ -26,11 +28,12 @@ public sealed class ItemSlotPickerBoundUserInterface : BoundUserInterface
 {
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IEyeManager _eye = default!;
-    private IUserInterfaceManager _ui = default!;
+    [Dependency] private readonly IUserInterfaceManager _ui = default!;
 
     private readonly ItemSlotsSystem _itemSlots;
     private readonly SharedTransformSystem _transform;
     private readonly InventorySystem _inventory;
+
 
     private RadialMenu? _menu;
     private RadialContainer? _layer;
@@ -45,28 +48,44 @@ public sealed class ItemSlotPickerBoundUserInterface : BoundUserInterface
 
     protected override void Open()
     {
-        _ui ??= IoCManager.Resolve<IUserInterfaceManager>();
+        if (_ui.ActiveScreen is null)
+            throw new NullReferenceException("Tried to open ItemSlotPicker with UserInterfaceManager.ActiveScreen being null. What the hell did you do?");
+
         base.Open();
-        if (EntMan.TryGetComponent<ClothingComponent>(Owner, out var clothing) &&
-            clothing.InSlot is not null &&
-           _inventory.TryGetSlot(_transform.GetParentUid(Owner), clothing.InSlot, out var slotDef) &&
-           _ui.ActiveScreen!.GetControlOfType<InventoryDisplay>()[0]!.TryGetButton(clothing.InSlot, out var button))
-        {
-            _menu = new ParentBoundRadialMenu();
-            _ui.ActiveScreen!.GetWidget<MainViewport>()!.Parent!.AddChild(_menu);
-            LayoutContainer.SetPosition(_menu, button!.Position);
-        }
-        else
-        {
-            _menu = new EntityCenteredRadialMenu(Owner);
-            _ui.ActiveScreen!.GetWidget<MainViewport>()!.Parent!.AddChild(_menu);
-        }
+        _menu = CreateRadialMenu();
         _menu.OnClose += Close;
         _menu.CloseButtonStyleClass = "RadialMenuCloseButton";
         _menu.BackButtonStyleClass = "RadialMenuBackButton";
-        
+
         UpdateLayer();
         _menu.OpenCenteredAt(_eye.WorldToScreen(_transform.GetWorldPosition(Owner)) / _clyde.ScreenSize);
+    }
+
+    private RadialMenu CreateRadialMenu()
+    {
+        RadialMenu? ret = TrySlotBoundRadialMenu();
+        ret ??= new EntityCenteredRadialMenu(Owner, _ui.ActiveScreen!.GetWidget<MainViewport>()!.Parent!); // why am i getting mainviewport's parent for this?
+        return ret;
+    }
+
+    private RadialMenu? TrySlotBoundRadialMenu()
+    {
+        //if (EntMan.TryGetComponent<ClothingComponent>(Owner, out var clothing) ||
+        //    clothing.InSlot is not string slotName)
+        //    return null;
+        //
+        //var inventoryUIcontroller = _ui.GetUIController<InventoryUIController>();
+        //_ui.GetActiveUIWidget<HotbarGui>().Get
+        //if(!inventoryUIcontroller._inventoryHotbar.GetButton(clothing.InSlot) is SlotButton button &&
+        //    
+        //
+        //
+        //{
+        //    _menu = new ParentBoundRadialMenu();
+        //    !.Parent!.AddChild(_menu);
+        //    LayoutContainer.SetPosition(_menu, button!.Position);
+        //}
+        return null;
     }
 
     private void UpdateLayer()
@@ -129,38 +148,59 @@ public class EntityCenteredRadialMenu : ParentBoundRadialMenu
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IEyeManager _eye = default!;
     [Dependency] private readonly IEntityManager _entMan = default!;
+    [Dependency] private readonly IUserInterfaceManager _ui = default!;
     private readonly SharedTransformSystem _transform;
-
+    InventoryUIController _invUIcontroller;
     private Vector2 _cachedPos;
 
-    public EntityCenteredRadialMenu(EntityUid entity) : base()
+    public EntityCenteredRadialMenu(EntityUid entity, Control parent) : base(parent)
     {
         Entity = entity;
         IoCManager.InjectDependencies(this);
         _transform = _entMan.System<SharedTransformSystem>();
+        _invUIcontroller = _ui.GetUIController<InventoryUIController>();
     }
-
-    public EntityCenteredRadialMenu(EntityUid entity, IEntityManager man, IEyeManager eye, IClyde clyde) : base()
-    {
-        Entity = entity;
-        _clyde = clyde;
-        _entMan = man;
-        _eye = eye;
-        _transform = _entMan.System<SharedTransformSystem>();
-    }
-
 
     protected override void FrameUpdate(FrameEventArgs args)
     {
+        TryCenterOnEntity();
         base.FrameUpdate(args);
+    }
+
+    private void TryCenterOnEntity()
+    {
+        var uiPos = TrySnapToUI();
+
         if (_entMan.Deleted(Entity) ||
             Parent is null ||
             !_entMan.TryGetComponent<TransformComponent>(Entity, out var transforam))
             return;
-        var pos = _eye.WorldToScreen(_transform.GetWorldPosition(Entity)) / Parent.PixelSize;
+        var pos = uiPos ?? _eye.WorldToScreen(_transform.GetWorldPosition(Entity)) / Parent.PixelSize;
         if (pos == _cachedPos)
             return;
         _cachedPos = pos;
         RecenterWindow(pos);
+    }
+
+    private Vector2? TrySnapToUI()
+    {
+        if (!_entMan.TryGetComponent<ClothingComponent>(Entity, out var clothingComp) ||
+           clothingComp.InSlot is not string slotName)
+            return null;
+
+        if(_invUIcontroller._inventoryHotbar?.GetButton(slotName) is SlotControl button)
+        {
+            return button.Position + button.Size / 2;
+        }
+
+        if(_ui.GetActiveUIWidget<HotbarGui>() is HotbarGui hotbar)
+        {
+            var buttons = hotbar.GetControlOfType<SlotControl>(true, true); // forgive me god
+            foreach(var slotControl in buttons)
+                if (slotControl.SlotName == slotName)
+                    return (slotControl.GlobalPosition - Parent!.GlobalPosition + slotControl.Size / 2) / Parent.Size;
+        }
+
+        return null;
     }
 }

@@ -1,32 +1,35 @@
 using Content.Client.Guidebook.Controls;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Client.UserInterface.RichText;
 
 namespace Content.Client.UserInterface.ControlExtensions;
 
 public static class ControlExtension
 {
-    public static List<T> GetControlOfType<T>(this Control parent) where T : Control
+    // WWDP EDIT START - +bool includeChildClasses
+    public static List<T> GetControlOfType<T>(this Control parent, bool includeChildClasses = false) where T : Control
     {
-        return parent.GetControlOfType<T>(typeof(T).Name, false);
+        return parent.GetControlOfType<T>(typeof(T).Name, false, includeChildClasses);
     }
-    public static List<T> GetControlOfType<T>(this Control parent, string childType) where T : Control
+    public static List<T> GetControlOfType<T>(this Control parent, string childType, bool includeChildClasses = false) where T : Control
     {
-        return parent.GetControlOfType<T>(childType, false);
-    }
-
-    public static List<T> GetControlOfType<T>(this Control parent, bool fullTreeSearch) where T : Control
-    {
-        return parent.GetControlOfType<T>(typeof(T).Name, fullTreeSearch);
+        return parent.GetControlOfType<T>(childType, false, includeChildClasses);
     }
 
-    public static List<T> GetControlOfType<T>(this Control parent, string childType, bool fullTreeSearch) where T : Control
+    public static List<T> GetControlOfType<T>(this Control parent, bool fullTreeSearch, bool includeChildClasses = false) where T : Control
+    {
+        return parent.GetControlOfType<T>(typeof(T).Name, fullTreeSearch, includeChildClasses);
+    }
+    // WWDP EDIT END
+    
+    public static List<T> GetControlOfType<T>(this Control parent, string childType, bool fullTreeSearch, bool includeChildClasses = false) where T : Control // WWDP EDIT
     {
         List<T> controlList = new List<T>();
 
         foreach (var child in parent.Children)
         {
-            var isType = child.GetType().Name == childType;
+            var isType = includeChildClasses ? child is T : child.GetType().Name == childType; // WWDP EDIT
             var hasChildren = child.ChildCount > 0;
 
             var searchDeeper = hasChildren && !isType;
@@ -38,7 +41,7 @@ public static class ControlExtension
 
             if (fullTreeSearch || searchDeeper)
             {
-                controlList.AddRange(child.GetControlOfType<T>(childType, fullTreeSearch));
+                controlList.AddRange(child.GetControlOfType<T>(childType, fullTreeSearch, includeChildClasses)); // WWDP EDIT
             }
         }
 

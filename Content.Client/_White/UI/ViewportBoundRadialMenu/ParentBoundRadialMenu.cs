@@ -1,8 +1,10 @@
 using Content.Client.UserInterface.Controls;
+using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Timing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -14,16 +16,23 @@ namespace Content.Client._White.UI.ViewportBoundRadialMenu;
 public class ParentBoundRadialMenu : RadialMenu
 {
     protected readonly MainViewport _mainViewport;
-    public ParentBoundRadialMenu() : base()
+
+    public ParentBoundRadialMenu(Control parent) : base()
     {
         _mainViewport = _uiManager.ActiveScreen?.GetWidget<MainViewport>()!; // if this throws you've got bigger problems than a single "!".
+        parent.AddChild(this);
     }
 
     public Vector2 FullRot(bool antiClockwise) =>
         antiClockwise ? new Vector2(MathF.Tau - float.Epsilon, 0) : new Vector2(0, MathF.Tau - float.Epsilon);
 
-    public void CalculateAngularRange(RadialContainer currentRadialContainer, Vector2 center, float radius, float screenWidth, float screenHeight, bool antiClockwise)
+    public void CalculateAngularRange(RadialContainer currentRadialContainer, Vector2 center, float radius, float screenWidth, float screenHeight, int childCount, bool antiClockwise)
     {
+        if (childCount <= 1)
+        { 
+            currentRadialContainer.AngularRange = FullRot(antiClockwise);
+            return;
+        }
         List<float> intersectionAngles = new List<float>();
 
         // Calculate intersections with left edge (x = 0)
@@ -83,9 +92,6 @@ public class ParentBoundRadialMenu : RadialMenu
         }
 
 
-        //// Add 0 and Tau to the list to cover full circle
-        //intersectionAngles.Add(0);
-        //intersectionAngles.Add(MathF.Tau);
         // Sort angles and remove duplicates
         if (intersectionAngles.Count == 0)
         {
@@ -94,7 +100,7 @@ public class ParentBoundRadialMenu : RadialMenu
         }
 
         intersectionAngles.Sort();
-        intersectionAngles.Add(intersectionAngles[0]+MathF.Tau);
+        intersectionAngles.Add(intersectionAngles[0]+MathF.Tau); // include wrap-around arc (from last to first)
         for (int i = intersectionAngles.Count - 1; i > 0; i--)
         {
             if (MathF.Abs(intersectionAngles[i] - intersectionAngles[i - 1]) < 1e-5f)
@@ -106,6 +112,9 @@ public class ParentBoundRadialMenu : RadialMenu
         float maxArcLength = 0;
         float bestStart = 0;
         float bestEnd = MathF.Tau;
+        float maxMidAngle = 0;
+
+        float ang(float rad) => rad * 180f / MathF.PI;
 
         // Check each consecutive interval
         for (int i = 1; i < intersectionAngles.Count; i++)
@@ -114,10 +123,16 @@ public class ParentBoundRadialMenu : RadialMenu
             float end = intersectionAngles[i];
             float length = end - start;
 
+            float astart = ang(start);
+            float aend = ang(end);
+            float alen = ang(length);
+
             // Check midpoint of the interval
-            float midAngle = (start + end) / 2 - MathF.PI/2;
-            float xMid = center.X + radius * MathF.Cos(midAngle);
-            float yMid = center.Y + radius * MathF.Sin(midAngle);
+            float midAngle = (start + end) / 2;
+            float xMid = center.X + radius * MathF.Cos(midAngle - MathF.PI / 2);
+            float yMid = center.Y + radius * MathF.Sin(midAngle - MathF.PI / 2);
+
+            float amidAngle = ang(midAngle);
 
             if (xMid >= 0 && xMid <= screenWidth && yMid >= 0 && yMid <= screenHeight)
             {
@@ -126,38 +141,39 @@ public class ParentBoundRadialMenu : RadialMenu
                     maxArcLength = length;
                     bestStart = start;
                     bestEnd = end;
+                    maxMidAngle = midAngle;
                 }
             }
         }
 
-        //// Check wrap-around interval (last angle to first angle plus Tau)
-        //if (intersectionAngles.Count > 0)
-        //{
-        //    float wrapStart = intersectionAngles[intersectionAngles.Count - 1];
-        //    float wrapEnd = intersectionAngles[0];
-        //    float wrapLength = wrapStart - wrapEnd;
-        //
-        //    float midWrap = (wrapStart + wrapEnd) / 2 - 1.5f * MathF.PI;
-        //    float xWrap = center.X + radius * MathF.Cos(midWrap);
-        //    float yWrap = center.Y + radius * MathF.Sin(midWrap);
-        //
-        //    if (xWrap >= 0 && xWrap <= screenWidth && yWrap >= 0 && yWrap <= screenHeight)
-        //    {
-        //        if (wrapLength > maxArcLength)
-        //        {
-        //            maxArcLength = wrapLength;
-        //            bestStart = wrapStart;
-        //            bestEnd = wrapEnd;
-        //        }
-        //    }
-        //}
+        // a shitty way to make the arc smaller the closer radialmenu is to the parent's edge
+        //var decrease = (1 - (maxArcLength / MathF.Tau)) * (MathF.PI / 2);
+        //bestStart += decrease;
+        //bestEnd -= decrease;    
 
-        maxArcLength = 1 - (maxArcLength / MathF.Tau);
-        bestStart += maxArcLength;
-        bestEnd -= maxArcLength;    
 
-        if (antiClockwise)
+        var newArc = maxArcLength;
+        if(newArc > MathF.PI / 2 && newArc <= MathF.Tau - 5 * MathF.PI / 180f)
+        {
+            newArc = newArc / 3f + MathF.PI / 3;
+        }
+
+        if (childCount == 2)
+            newArc *= 0.5f;
+
+        bestStart = maxMidAngle - newArc / 2;
+        bestEnd = maxMidAngle + newArc / 2;
+
+
+        if (antiClockwise ^ bestStart > bestEnd) // the above can invert our arc if it's a bit below pi/2, so we fix it if needed
             (bestStart, bestEnd) = (bestEnd, bestStart);
+        
+        //// make the arc smaller if there are only two children because it looks a bit nicer
+        //if(childCount == 2)
+        //{
+        //    bestStart += maxArcLength * 0.15f;
+        //    bestEnd   -= maxArcLength * 0.15f;
+        //}
         currentRadialContainer.AngularRange = new Vector2(bestStart, bestEnd);
     }
 
@@ -175,9 +191,6 @@ public class ParentBoundRadialMenu : RadialMenu
 
         _cachedPosition = boundPos;
         bool antiCockwise = radCont.RadialAlignment == RadialContainer.RAlignment.AntiClockwise; // sic
-        if (radCont.ChildCount >= 2)
-            CalculateAngularRange(radCont, _cachedPosition.Value, radCont.Radius + 64, Parent.Size.X, Parent.Size.Y, antiCockwise);
-        else
-            radCont.AngularRange = FullRot(antiCockwise);
+        CalculateAngularRange(radCont, _cachedPosition.Value, radCont.Radius + 32, Parent.Size.X, Parent.Size.Y, radCont.ChildCount, antiCockwise);
     }
 }

@@ -39,9 +39,11 @@ public sealed class InventoryUIController : UIController, IOnStateEntered<Gamepl
     private InventorySlotsComponent? _playerInventory;
     private readonly Dictionary<string, ItemSlotButtonContainer> _slotGroups = new();
 
-    private StrippingWindow? _strippingWindow;
-    private ItemSlotButtonContainer? _inventoryHotbar;
-    private SlotButton? _inventoryButton;
+    // WWDP EDIT START
+    public StrippingWindow? _strippingWindow { get; private set; }
+    public ItemSlotButtonContainer? _inventoryHotbar { get; private set; }
+    public SlotButton? _inventoryButton { get; private set; }
+    // WWDP EDIT END
 
     private SlotControl? _lastHovered;
 
