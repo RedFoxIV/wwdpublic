@@ -1,0 +1,40 @@
+- type: soundCollection
+  id: shidNear
+  files:
+  - /Audio/_White/wetfart.ogg
+
+- type: soundCollection
+  id: shidFar
+  files:
+  - /Audio/_White/fartreverb.ogg
+
+- type: entity
+  name: poo
+  parent: FoodPieBase
+  id: FoodWhiteDream
+  description: Нача-а-а-а-альник!
+  components:
+  - type: FlavorProfile
+    flavors:
+      - sweet
+      - banana
+      - creamy
+  - type: Sprite #replace with actual sprite
+    layers:
+    - state: tin
+    - state: plain
+  - type: CreamPie
+    #moodletId: shidded #also make it work with self-shidding
+  - type: Tag
+    tags:
+    - Pie
+
+- type: alert
+  id: KnockedDown
+  icons:
+  - sprite: /Textures/_White/shiieeet_alert.rsi
+    state: ANALOGOV_NET
+  - sprite: /Textures/_White/shiieeet_alert.rsi
+    state: ANALOGOV_NET2
+  name: alerts-burlesk
+  description: alerts-burlesk-desc
