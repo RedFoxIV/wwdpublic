@@ -16,6 +16,9 @@ namespace Content.Shared.Nutrition.Components
         [ViewVariables]
         public bool Splatted { get; set; } = false;
 
+        [DataField]
+        public bool EnhancedComedy = false;
+
         public const string PayloadSlotName = "payloadSlot";
     }
 }

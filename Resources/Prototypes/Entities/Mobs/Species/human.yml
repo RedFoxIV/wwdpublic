@@ -6,7 +6,10 @@
   abstract: true
   components:
   - type: HochuSrat
-    thirdThrumpet: 30 #seconds
+    firstThrumpet: 20 #seconds
+    secondThrumpet: 40 #seconds
+    thirdThrumpet: 60 #seconds
+    initialSpread: 10
   - type: Hunger
   - type: Icon # It will not have an icon in the adminspawn menu without this. Body parts seem fine for whatever reason.
     sprite: Mobs/Species/Human/parts.rsi

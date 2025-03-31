@@ -59,6 +59,10 @@
       sprite: "Effects/creampie.rsi"
       state: "creampie_human"
       visible: false
+    - map: [ "zasranets" ] # Dynamically generated my ass, why do i have to copy this to EVERY fucking species?
+      sprite: "_White/засранец.rsi"
+      state: "funny"
+      visible: false
   - type: DamageVisuals
     thresholds: [ 10, 20, 30, 50, 70, 100 ]
     targetLayers:
@@ -80,6 +84,11 @@
         clownedon: # Not 'creampied' bc I can already see Skyrat complaining about conflicts.
           True: {visible: true}
           False: {visible: false}
+      enum.CreamPiedVisuals.Shidded:
+        zasranets:
+          True: {visible: true}
+          False: {visible: false}
+
   - type: StatusIcon
     bounds: -0.5,-0.5,0.5,0.5
   - type: RotationVisuals

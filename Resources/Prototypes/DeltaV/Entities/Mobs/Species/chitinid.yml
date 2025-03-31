@@ -141,6 +141,10 @@
         sprite: "Effects/creampie.rsi"
         state: "creampie_moth"
         visible: false
+      - map: [ "zasranets" ] # Dynamically generated my ass, why do i have to copy this to EVERY fucking species?
+        sprite: "_White/засранец.rsi"
+        state: "funny"
+        visible: false
   - type: Chitinid
   - type: BlockInjection
     blockReason: chitinid

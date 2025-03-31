@@ -52,6 +52,10 @@
         sprite: "Effects/creampie.rsi"
         state: "creampie_human"
         visible: false
+      - map: [ "zasranets" ] # Dynamically generated my ass, why do i have to copy this to EVERY fucking species?
+        sprite: "_White/засранец.rsi"
+        state: "funny"
+        visible: false
 # Yes, RArm has to be down here
       - map: [ "enum.HumanoidVisualLayers.RArm" ]
       - map: [ "enum.HumanoidVisualLayers.Hair" ]
@@ -223,6 +227,10 @@
       - map: [ "clownedon" ] # Dynamically generated
         sprite: "Effects/creampie.rsi"
         state: "creampie_human"
+        visible: false
+      - map: [ "zasranets" ] # Dynamically generated my ass, why do i have to copy this to EVERY fucking species?
+        sprite: "_White/засранец.rsi"
+        state: "funny"
         visible: false
 # Yes, RArm has to be down here
       - map: [ "enum.HumanoidVisualLayers.RArm" ]

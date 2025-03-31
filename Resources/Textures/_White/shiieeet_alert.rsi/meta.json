@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "license": "CC-BY-SA-3.0",
+  "license": "for your own sake, don't.",
   "copyright": "white dream toilet *spin insulshunter cult homosex K40k",
   "size": {
     "x": 32,
@@ -8,7 +8,7 @@
   },
   "states": [
     {
-      "name": "ANALOGOV_NET",
+      "name": "ANALOGOV_NET1",
       "delays": [
         [
           0.14,

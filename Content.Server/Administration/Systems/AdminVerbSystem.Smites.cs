@@ -252,7 +252,20 @@ public sealed partial class AdminVerbSystem
                 Impact = LogImpact.Extreme,
                 Message = Loc.GetString("admin-smite-creampie-description")
             };
+            Verb coproPie = new()
+            {
+                Text = "Насрать в шаровары",
+                Category = VerbCategory.Smite,
+                Icon = new SpriteSpecifier.Rsi(new("/Textures/Objects/Consumable/Food/Baked/pie.rsi"), "plain-slice"),
+                Act = () =>
+                {
+                    _creamPieSystem.SetShidded(args.Target, creamPied, true);
+                },
+                Impact = LogImpact.Extreme,
+                Message = Loc.GetString("admin-smite-shidded-description")
+            };
             args.Verbs.Add(creamPie);
+            args.Verbs.Add(coproPie);
         }
 
         if (TryComp<BloodstreamComponent>(args.Target, out var bloodstream))

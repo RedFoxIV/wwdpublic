@@ -65,17 +65,28 @@
 //▓▓▓▓▓▓█████▓▓██████▓▓█▓▓▒▒▓▓▓▓▓▓▓▓▓████▓▓██▓▒▓▓▓██▓▓▓▓▓███▓█▓▓▒▓█▓█▓██▓█▓▓███▓▓▓▒▒▓▓▓██▓▓▓▓▓▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▒▓▓▓████▓▒▒▓▓██▓▓▒▒▒▓█▒████▓███▓▓███████▓▒▓▓▓▓▓▒▒▒▒▓
 //▓▒▓▓████▓▓▓▓█▓▒▓███▓▓▓█▒▓▓▓▓▓▓▒▓▓▓▓████▓█▓▓▓▓▓▓████▓▓███▓███▓█▓█▓▓▓▓▓▓▓██▓▒████▓▓▒▓▓▓▓█▓▓▒▓▓▓▓▒▒▓▓▓▓▓▓▓▓▓▓▓█▓▓▓▓▓██▓▓▓█▓▓███▒▓▓██▓█▓▓█▓▓▓█▒▓▓▓████▓▓▓▓▓▓█▓▓▓▓▒▒▒█
 
+using Content.Server.Disposal.Unit.Components;
 using Content.Server.Mood;
 using Content.Shared._White.HochuSrat;
+using Content.Shared.Alert;
+using Content.Shared.Disposal;
+using Content.Shared.DoAfter;
 using Content.Shared.Mood;
+using Content.Shared.Nutrition.Components;
+using Content.Shared.Nutrition.EntitySystems;
+using Content.Shared.Popups;
 using Content.Shared.Showers;
+using Content.Shared.Storage.EntitySystems;
+using Content.Shared.Verbs;
 using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
+using Robust.Shared.Containers;
 using Robust.Shared.Map;
 using Robust.Shared.Physics.Events;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
+using Robust.Shared.Timing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -87,14 +98,14 @@ namespace Content.Server._White.HochuSrat;
 public sealed class HochuSratSystem : SharedHochuSratSystem
 {
     [Dependency] private readonly SharedAudioSystem _аудио = default!;
+    [Dependency] private readonly SharedCreamPieSystem _cpSys = default!;
+    [Dependency] private readonly AlertsSystem _alert = default!;
     [Dependency] private readonly IRobustRandom _rng = default!;
 
     public override void Initialize()
     {
-        SubscribeLocalEvent<ShiddedComponent, ComponentInit>(Shidded);
-        SubscribeLocalEvent<ShiddedComponent, ComponentRemove>(Unshidded);
+        base.Initialize();
         SubscribeLocalEvent<ShiddedComponent, StartCollideEvent>(OnUnshid);
-
         SubscribeLocalEvent<HochuSratComponent, ComponentInit>(Hochun);
     }
 
@@ -106,6 +117,7 @@ public sealed class HochuSratSystem : SharedHochuSratSystem
     private void ResetFPF(HochuSratComponent comp)
     {
         comp.FastPassFlat = TimeSpan.Zero;
+        comp.FastPassMultiplier = 1f;
         if (comp.InitialSpread > TimeSpan.Zero)
             comp.FastPassFlat = _rng.Next(comp.InitialSpread) - comp.InitialSpread / 2;
         Dirty(comp.Owner, comp);
@@ -117,43 +129,70 @@ public sealed class HochuSratSystem : SharedHochuSratSystem
             RemCompDeferred(uid, comp);
     }
 
-    public void Shidded(EntityUid uid, ShiddedComponent comp, ComponentInit args) => RaiseLocalEvent(uid, new MoodEffectEvent("shidded"));
-    public void Unshidded(EntityUid uid, ShiddedComponent comp, ComponentRemove args) => RaiseLocalEvent(uid, new MoodRemoveEffectEvent("shidded"));
+
 
     public override void Update(float frameTime)
     {
         var query = EntityQueryEnumerator<HochuSratComponent>();
         while(query.MoveNext(out EntityUid uid, out var kishechnik))
         {
-            TimeSpan commitTime = kishechnik.LastCommitTime + kishechnik.ActualThirdThrumpet; // who cares about caching
-            if(_timing.CurTime >= commitTime )
+            TimeSpan curTime = _timing.CurTime;
+            if (curTime >= kishechnik.ThirdThrumpetTime)
             {
                 kishechnik.LastCommitTime = _timing.CurTime;
-                ВыдатьБазу(uid, kishechnik);
-                EnsureComp<ShiddedComponent>(uid);
-                kishechnik.FastPassMultiplier = 1f;
+                TakeAShit(uid, true, comp: kishechnik);
                 ResetFPF(kishechnik);
+            }
+            else if(curTime >= kishechnik.SecondThrumpetTime)
+            {
+                _alert.ShowAlert(uid, "ShatPants", 2);
+            }
+            else if (curTime >= kishechnik.FirstThrumpetTime)
+            {
+                _alert.ShowAlert(uid, "ShatPants", 1);
+            }
+            else
+            {
+                _alert.ClearAlert(uid, "ShatPants");
             }
         }
     }
 
-    public void ВыдатьБазу(ИдентификаторСущности базовичок, ХочуСратьКомпонент производственныеСилы)
+    // at this point i will keep this as close to fully russian not out of principle, but spite
+    private ИдентификаторСущности ВыдатьБазу(ИдентификаторСущности базовичок, ХочуСратьКомпонент производственныеСилы, bool СоЗвуком = true) // couldn't localise bool argument due to const-cumpiler bullshittery. It's so over.
     {
-        СоздатьРядомИлиУронить(производственныеСилы.ИдентификаторБазы, базовичок);
+        ИдентификаторСущности Вкусняшка = СоздатьРядомИлиУронить(_rng.Pick(производственныеСилы.ИдентификаторыБазы), базовичок);
         ЧислоСПлавающейЗапятой дальность = 14f;
         ТрансформацияКомпонент трансформацияБазовичка = ПолучитьКомпонентТрансформации(базовичок);
         ПозицияСущностиНаКарте позицияБазовичкаНаКарте = трансформацияБазовичка.ПозицияСущностиНаКарте;
         ПозицияСущности позицияБазовичка = трансформацияБазовичка.ПозицияСущностиЛокальная;
         Фильтр ближнийФильтр = Фильтр.Пустой().ДобавитьВРадиусе(позицияБазовичкаНаКарте, дальность);
         Фильтр дальнийФильтр = Фильтр.ШирокаяТрансляция().УбратьВРадиусе(позицияБазовичкаНаКарте, дальность);
-        _аудио.ПроигратьСтатичныйЗвук(производственныеСилы.МоцартБлижний, ближнийФильтр, позицияБазовичка, Утверждение.Правда);
-        _аудио.ПроигратьГлобальныйЗвук(производственныеСилы.МоцартДальний, дальнийФильтр, Утверждение.Ложь);
+        if (СоЗвуком)
+        {
+            _аудио.ПроигратьСтатичныйЗвук(производственныеСилы.МоцартБлижний, ближнийФильтр, позицияБазовичка, Утверждение.Правда);
+            _аудио.ПроигратьГлобальныйЗвук(производственныеСилы.МоцартДальний, дальнийФильтр, Утверждение.Ложь);
+        }
+        return Вкусняшка;
+    }
+
+    // hence this public wrapper because i am sick of doing these fucking comp wrappers
+    public bool TakeAShit(EntityUid zasranets, bool comedy, bool sound = true, HochuSratComponent? comp = null)
+        => TakeAShit(zasranets, comedy, out _, sound, comp);
+    public bool TakeAShit(EntityUid zasranets, bool comedy, out EntityUid yummy, bool sound = true, HochuSratComponent? comp = null)
+    {
+        yummy = EntityUid.Invalid;
+        if (!Resolve(zasranets, ref comp))
+            return false;
+
+        if (comedy && TryComp<CreamPiedComponent>(zasranets, out var CP))
+            _cpSys.SetShidded(zasranets, CP, true);
+        yummy = ВыдатьБазу(zasranets, comp, sound);
+        return true;
     }
 
 
-
     #region 1c-inator
-    struct Утверждение { public static bool Правда => true; public static bool Ложь => false; }
     public struct ИдентификаторСущности(EntityUid юайди)
     {
         public int Номер = юайди.Id;
@@ -182,12 +221,21 @@ public sealed class HochuSratSystem : SharedHochuSratSystem
         public static implicit operator ЧислоСПлавающейЗапятой(float ↈ) => new ЧислоСПлавающейЗапятой(ↈ); 
     }
 
+    public struct Утверждение(bool f)
+    {
+        public const bool Правда = true;
+        public const bool Ложь = false;
+        public bool Значение = f;
+        public static implicit operator bool(Утверждение ↈ) => ↈ.Значение; 
+        public static implicit operator Утверждение(bool ↈ) => new Утверждение(ↈ); 
+    }
+
     public class ХочуСратьКомпонент(HochuSratComponent srat)
     {
         public HochuSratComponent ඞ = srat;
         public SoundSpecifier МоцартБлижний => ඞ.MozartNear;
         public SoundSpecifier МоцартДальний => ඞ.MozartFar;
-        public EntProtoId ИдентификаторБазы => ඞ.BazaID;
+        public List<EntProtoId> ИдентификаторыБазы => ඞ.BazaIDs;
         public static implicit operator HochuSratComponent(ХочуСратьКомпонент кам) => кам.ඞ;
         public static implicit operator ХочуСратьКомпонент(HochuSratComponent cum) => new ХочуСратьКомпонент(cum);
     }
@@ -235,3 +283,25 @@ static class Ебильтр
 }
 
 #endregion
+
+
+
+// 1:30AM i am a flesh automaton animated by neurotransmitters
+public sealed class CanShitInsideEntitySystem : SharedCanShitInsideEntitySystem
+{
+    [Dependency] private readonly SharedDoAfterSystem _doafter = default!;
+    [Dependency] private readonly SharedPopupSystem _popup = default!;
+    [Dependency] private readonly HochuSratSystem _srat  = default!;
+    [Dependency] private readonly SharedContainerSystem _cont = default!;
+    [Dependency] private readonly SharedDisposalUnitSystem _disposalUnitSystem = default!;
+
+    protected override void Shieet(EntityUid uid, CanShitInsideComponent comp, ShitDoAfterEvent args)
+    {
+        if(_srat.TakeAShit(args.User, false, out var bömb, false))
+        {
+            if (!TryComp<DisposalUnitComponent>(uid, out var disposals))
+                QueueDel(bömb);
+            _disposalUnitSystem.DoInsertDisposalUnit(uid, bömb, args.User, disposals);
+        }
+    }
+}

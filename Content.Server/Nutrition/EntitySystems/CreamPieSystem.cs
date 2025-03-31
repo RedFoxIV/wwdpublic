@@ -1,4 +1,5 @@
 using Content.Server.Chemistry.Containers.EntitySystems;
+using Content.Server.Decals;
 using Content.Server.Explosion.EntitySystems;
 using Content.Server.Fluids.EntitySystems;
 using Content.Server.Nutrition.Components;
@@ -14,6 +15,7 @@ using JetBrains.Annotations;
 using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Player;
+using Robust.Shared.Random;
 
 namespace Content.Server.Nutrition.EntitySystems
 {
@@ -26,6 +28,8 @@ namespace Content.Server.Nutrition.EntitySystems
         [Dependency] private readonly TriggerSystem _trigger = default!;
         [Dependency] private readonly SharedAudioSystem _audio = default!;
         [Dependency] private readonly PopupSystem _popup = default!;
+        [Dependency] private readonly DecalSystem _decal = default!;
+        [Dependency] private readonly IRobustRandom _rng = default!;
 
         public override void Initialize()
         {
@@ -59,6 +63,8 @@ namespace Content.Server.Nutrition.EntitySystems
             ActivatePayload(uid);
 
             EntityManager.QueueDeleteEntity(uid);
+            if (creamPie.EnhancedComedy)
+                _decal.TryAddDecal($"shit{_rng.Next(1,9)}", Transform(uid).Coordinates, out var _, cleanable: true);
         }
 
         private void OnConsume(Entity<CreamPieComponent> entity, ref ConsumeDoAfterEvent args)
@@ -73,7 +79,7 @@ namespace Content.Server.Nutrition.EntitySystems
 
         private void ActivatePayload(EntityUid uid)
         {
-            if (_itemSlots.TryGetSlot(uid, CreamPieComponent.PayloadSlotName, out var itemSlot))
+            if (TryComp<ItemSlotsComponent>(uid, out var slots) && _itemSlots.TryGetSlot(uid, CreamPieComponent.PayloadSlotName, out var itemSlot, slots))
             {
                 if (_itemSlots.TryEject(uid, itemSlot, user: null, out var item))
                 {
@@ -91,20 +97,21 @@ namespace Content.Server.Nutrition.EntitySystems
             }
         }
 
-        protected override void CreamedEntity(EntityUid uid, CreamPiedComponent creamPied, ThrowHitByEvent args)
+        protected override void CreamedEntity(EntityUid uid, CreamPiedComponent creamPied, ThrowHitByEvent args, bool shit = false)
         {
-            _popup.PopupEntity(Loc.GetString("cream-pied-component-on-hit-by-message", ("thrower", args.Thrown)), uid, args.Target);
+            _popup.PopupEntity(Loc.GetString($"cream-pied-component-on-hit-by-message{(shit?"-shit":"")}", ("thrower", args.Thrown)), uid, args.Target);
             var otherPlayers = Filter.Empty().AddPlayersByPvs(uid);
             if (TryComp<ActorComponent>(args.Target, out var actor))
             {
                 otherPlayers.RemovePlayer(actor.PlayerSession);
             }
-            _popup.PopupEntity(Loc.GetString("cream-pied-component-on-hit-by-message-others", ("owner", uid), ("thrower", args.Thrown)), uid, otherPlayers, false);
+            _popup.PopupEntity(Loc.GetString($"cream-pied-component-on-hit-by-message-others{(shit?"-shit":"")}", ("owner", uid), ("thrower", args.Thrown)), uid, otherPlayers, false);
         }
 
         private void OnRejuvenate(Entity<CreamPiedComponent> entity, ref RejuvenateEvent args)
         {
             SetCreamPied(entity, entity.Comp, false);
+            SetShidded(entity, entity.Comp, false);
         }
     }
 }

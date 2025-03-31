@@ -18,5 +18,6 @@ public sealed partial class WashCreamPieReaction : EntityEffect
         if (!args.EntityManager.TryGetComponent(args.TargetEntity, out CreamPiedComponent? creamPied)) return;
 
         args.EntityManager.System<CreamPieSystem>().SetCreamPied(args.TargetEntity, creamPied, false);
+        args.EntityManager.System<CreamPieSystem>().SetShidded(args.TargetEntity, creamPied, false);
     }
 }

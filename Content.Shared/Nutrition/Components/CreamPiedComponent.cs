@@ -9,11 +9,13 @@ namespace Content.Shared.Nutrition.Components
     {
         [ViewVariables]
         public bool CreamPied { get; set; } = false;
+        [ViewVariables]
+        public bool Shidded { get; set; } = false;
     }
 
     [Serializable, NetSerializable]
     public enum CreamPiedVisuals
     {
-        Creamed,
+        Creamed, Shidded
     }
 }

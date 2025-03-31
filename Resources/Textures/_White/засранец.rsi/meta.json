@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "license": "for your own sake, don't.",
+  "copyright": "white dream toilet *spin insulshunter cult homosex K40k",
+  "size": {
+    "x": 32,
+    "y": 32
+  },
+  "states": [
+    {
+      "name": "funny",
+      "directions": 4
+    },
+	{
+      "name": "splat"
+    },
+	{
+      "name": "beeba&boba"
+    },
+	{
+      "name": "bulletholes1"
+    },
+	{
+      "name": "bulletholes2"
+    },
+	{
+      "name": "bulletholes3"
+    },
+	{
+      "name": "goatse1"
+    },
+	{
+      "name": "goatse2"
+    },
+	{
+      "name": "sosig_horizontal1"
+    },
+	{
+      "name": "hypnospiral"
+    },
+	{
+      "name": "egyptruins"
+    },
+	{
+      "name": "sosig_vertical"
+    },
+	{
+      "name": "sosig_horizontal2"
+    },
+	{
+      "name": "egypt"
+    }
+  ]
+}

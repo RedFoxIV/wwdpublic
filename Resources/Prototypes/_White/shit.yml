@@ -11,30 +11,172 @@
 - type: entity
   name: poo
   parent: FoodPieBase
-  id: FoodWhiteDream
+  id: FoodWhiteDreamBase
   description: Нача-а-а-а-альник!
   components:
   - type: FlavorProfile
     flavors:
-      - sweet
-      - banana
-      - creamy
-  - type: Sprite #replace with actual sprite
-    layers:
-    - state: tin
-    - state: plain
+      - shit
   - type: CreamPie
+    enhancedComedy: true
     #moodletId: shidded #also make it work with self-shidding
   - type: Tag
     tags:
     - Pie
 
+- type: entity
+  name: poo
+  parent: FoodWhiteDreamBase
+  id: FoodWhiteDream1
+  components:
+  - type: Sprite #replace with actual sprite
+    sprite: _White/засранец.rsi
+    layers:
+    - state: sosig_horizontal1
+  
+- type: entity
+  name: poo
+  parent: FoodWhiteDreamBase
+  id: FoodWhiteDream2
+  components:
+  - type: Sprite #replace with actual sprite
+    sprite: _White/засранец.rsi
+    layers:
+    - state: hypnospiral
+  
+- type: entity
+  name: poo
+  parent: FoodWhiteDreamBase
+  id: FoodWhiteDream3
+  components:
+  - type: Sprite #replace with actual sprite
+    sprite: _White/засранец.rsi
+    layers:
+    - state: egyptruins
+  
+- type: entity
+  name: poo
+  parent: FoodWhiteDreamBase
+  id: FoodWhiteDream4
+  components:
+  - type: Sprite #replace with actual sprite
+    sprite: _White/засранец.rsi
+    layers:
+    - state: sosig_vertical
+  
+- type: entity
+  name: poo
+  parent: FoodWhiteDreamBase
+  id: FoodWhiteDream5
+  components:
+  - type: Sprite #replace with actual sprite
+    sprite: _White/засранец.rsi
+    layers:
+    - state: sosig_horizontal2
+  
+- type: entity
+  name: poo
+  parent: FoodWhiteDreamBase
+  id: FoodWhiteDream6
+  components:
+  - type: Sprite #replace with actual sprite
+    sprite: _White/засранец.rsi
+    layers:
+    - state: egypt
+  
+
+
+
+- type: flavor
+  id: shit
+  flavorType: Complex
+  description: flavor-complex-ss14
+
+
 - type: alert
-  id: KnockedDown
+  id: ShatPants
   icons:
-  - sprite: /Textures/_White/shiieeet_alert.rsi
-    state: ANALOGOV_NET
-  - sprite: /Textures/_White/shiieeet_alert.rsi
+  - sprite: _White/shiieeet_alert.rsi
+    state: ANALOGOV_NET1
+  - sprite: _White/shiieeet_alert.rsi
     state: ANALOGOV_NET2
+  maxSeverity: 2
   name: alerts-burlesk
   description: alerts-burlesk-desc
+
+- type: moodEffect
+  id: shidded
+  moodChange: -9999
+  timeout: 604800 # irl week
+
+- type: decal
+  id: shit1
+  tags: ["poo"]
+  defaultCleanable: true
+  defaultSnap: true
+  sprite:
+    sprite: _White/засранец.rsi
+    state: splat
+
+- type: decal
+  id: shit2	
+  tags: ["poo"]
+  defaultCleanable: true
+  defaultSnap: true
+  sprite:
+    sprite: _White/засранец.rsi
+    state: beeba&boba
+
+- type: decal
+  id: shit3
+  tags: ["poo"]
+  defaultCleanable: true
+  defaultSnap: true
+  sprite:
+    sprite: _White/засранец.rsi
+    state: bulletholes1
+
+- type: decal
+  id: shit4
+  tags: ["poo"]
+  defaultCleanable: true
+  defaultSnap: true
+  sprite:
+    sprite: _White/засранец.rsi
+    state: bulletholes2
+
+- type: decal
+  id: shit5
+  tags: ["poo"]
+  defaultCleanable: true
+  defaultSnap: true
+  sprite:
+    sprite: _White/засранец.rsi
+    state: bulletholes3
+
+- type: decal
+  id: shit6
+  tags: ["poo"]
+  defaultCleanable: true
+  defaultSnap: true
+  sprite:
+    sprite: _White/засранец.rsi
+    state: goatse1
+
+- type: decal
+  id: shit7
+  tags: ["poo"]
+  defaultCleanable: true
+  defaultSnap: true
+  sprite:
+    sprite: _White/засранец.rsi
+    state: goatse2
+
+- type: decal
+  id: shit8
+  tags: ["poo"]
+  defaultCleanable: true
+  defaultSnap: true
+  sprite:
+    sprite: _White/засранец.rsi
+    state: slipnslide

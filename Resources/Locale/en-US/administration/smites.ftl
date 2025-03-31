@@ -24,6 +24,7 @@ admin-smite-monkeyify-description = Turns the target into a monkey.
 admin-smite-lung-cancer-description = Stage IIIA Lung Cancer, for when they really like the hit show Breaking Bad.
 admin-smite-electrocute-description = Electrocutes them, rendering anything they were wearing useless.
 admin-smite-creampie-description = A creampie, condensed into a button.
+admin-smite-shidded-description = A chocolate pie, condensed into a button.
 admin-smite-remove-blood-description = Removes all of their blood, messily.
 admin-smite-vomit-organs-description = Causes them to vomit, organs included.
 admin-smite-remove-hands-description = Removes their hands.

@@ -1,3 +1,4 @@
+using Content.Client.Alerts;
 using Content.Shared._White.HochuSrat;
 using System;
 using System.Collections.Generic;
@@ -9,4 +10,5 @@ namespace Content.Client._White.HochuSrat;
 
 public sealed class HochuSratSystem : SharedHochuSratSystem
 {
+
 }
