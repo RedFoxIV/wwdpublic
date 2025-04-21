@@ -23,7 +23,13 @@
   id: GrenadeTrapPart
 
 - type: Tag
-  id: GasTank
+  id: PaperWrittenCommunist
+
+- type: Tag
+  id: AiCoreBoard
+
+- type: Tag
+  id: GasTank # yeah...
 
 - type: Tag
   id: BackpackAttachable

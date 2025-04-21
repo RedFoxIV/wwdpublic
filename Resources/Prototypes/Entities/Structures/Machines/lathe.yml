@@ -49,6 +49,8 @@
     price: 800
   - type: ResearchClient
   - type: TechnologyDatabase
+  - type: Speech # Goobstation - Lathe message on recipes update
+    speechSounds: Lathe
 
 # a lathe that can be sped up with space lube / slowed down with glue
 - type: entity
@@ -200,6 +202,7 @@
     - CellRechargerCircuitboard
     - BorgChargerCircuitboard
     - WeaponCapacitorRechargerCircuitboard
+    - HydroponicsTrayMachineCircuitboard
     - HandheldStationMap
     - ClothingHeadHatWelding
     - ProgramDiskUnburnt # Arcadis - Modular Computer System
@@ -213,14 +216,17 @@
     - NekomimeticTranslator
     - DraconicTranslator
     - SolCommonTranslator
+    - NovuNedericTranslator
     - RootSpeakTranslator
     - BasicGalaticCommonTranslatorImplanter
     - MofficTranslator
     - N14MaterialCircuitry
     - SnowballMaker # WWDP
+    - VehicleWheelchairFolded # Goobstation
   - type: EmagLatheRecipes
     emagStaticRecipes:
     - BoxLethalshot
+    - BoxShotgunLumen
     - BoxShotgunFlare
     - BoxShotgunSlug
     - MagazineBoxLightRifle
@@ -243,6 +249,7 @@
     - RiotShield
     - SpeedLoaderMagnum
     - SpeedLoaderMagnumEmpty
+    - GrenadeFlashBang # Goobstation
     # .35 Caseless Pistol
     - MagazinePistolCaselessRiflePractice # EE
     - MagazinePistolCaselessRifle # EE
@@ -330,6 +337,8 @@
     - SyringeCryostasis
     - Syringe
     - DisposableSyringe
+    - MiniSyringe
+    - SyringeGun
     - Implanter
     - PillCanister
     - ChemistryEmptyBottle01
@@ -363,7 +372,7 @@
     - WeaponGauntletGorilla
     - SynthesizerInstrument
     - RPED
-    - ClothingShoesBootsMagSci
+    - ClothingShoesBootsMag
     - ClothingShoesBootsMoon
     - ClothingShoesBootsSpeed
     - ClothingShoesBootsMagAdv
@@ -408,6 +417,8 @@
     - EnergyScalpel
     - EnergyCautery
     - AdvancedRetractor
+    - VehicleWheelchairFolded # Goobstation
+    - Intellicard # WD
   - type: EmagLatheRecipes
     emagDynamicRecipes:
     - BoxBeanbag
@@ -491,6 +502,7 @@
     staticRecipes:
     - ProtolatheMachineCircuitboard
     - AutolatheMachineCircuitboard
+    - BookPressMachineCircuitboard
     - CircuitImprinterMachineCircuitboard
     - OreProcessorMachineCircuitboard
     - MaterialReclaimerMachineCircuitboard
@@ -513,13 +525,13 @@
     - SpaceHeaterMachineCircuitBoard
     - StationAnchorCircuitboard
     - SeedExtractorMachineCircuitboard
-    - HydroponicsTrayMachineCircuitboard
     - ReagentGrinderIndustrialMachineCircuitboard
     - StasisBedMachineCircuitboard
     - CryoPodMachineCircuitboard
     - N14MaterialCircuitry
     dynamicRecipes:
     - ThermomachineFreezerMachineCircuitBoard
+    - DroneElectronics
     - HellfireFreezerMachineCircuitBoard
     - PortableScrubberMachineCircuitBoard
     - CloningPodMachineCircuitboard
@@ -597,7 +609,7 @@
     - SalvageExpeditionsComputerCircuitboard
     - JukeboxCircuitBoard
     - AutodocCircuitboard # Shitmed Change
-    - OperatingTableCircuitboard # Shitmed Change
+    #    - OperatingTableCircuitboard # Shitmed Change
     - MaterialSiloCircuitboard
     - GygaxCentralElectronics
     - GygaxPeripheralsElectronics
@@ -610,6 +622,18 @@
     - SMESAdvancedMachineCircuitboard
     - BaseComputerModularCircuitBoard # Arcadis - Modular Computer System
     - DiskBurnerMachineCircuitboard # Arcadis - Modular Computer System
+    # WD edit start - constructible AI
+    - StationAICoreCircuitboard
+    - StationAiUploadCircuitboard
+    - AsimovCircuitBoard
+    - CorporateCircuitBoard
+    - NTDefaultCircuitBoard
+    - MotherDroneCircuitBoard
+    - NutimovCircuitBoard
+    - PaladinCircuitBoard
+    - RobocopCircuitBoard
+    - QuarantineCircuitBoard
+    # WD edit end
   - type: EmagLatheRecipes
     emagDynamicRecipes:
     - ShuttleGunDusterCircuitboard
@@ -721,7 +745,6 @@
     - BorgModuleAdvancedTool
     - BorgModuleGPS
     - BorgModuleRCD
-    - BorgModuleRPD
     - BorgModuleJetpack
     - BorgModulePka
     - BorgModuleArtifact
@@ -796,6 +819,7 @@
     - ModsuitShell
     - ModsuitPlatingExternal
     - PowerCageHigh # Goobstation - Powercell to exosuit fab
+    - ReverseMMI # IPCMMI
   - type: EmagLatheRecipes
     emagDynamicRecipes:
     - WeaponMechCombatImmolationGun
@@ -833,16 +857,20 @@
     layers:
     - state: icon
       map: ["enum.LatheVisualLayers.IsRunning"]
+      color: "#ffaa99"
     - state: unlit
       shader: unshaded
       map: ["enum.PowerDeviceVisualLayers.Powered"]
+      color: "#ffaaaa"
     - state: inserting
       map: ["enum.MaterialStorageVisualLayers.Inserting"]
+      color: "#ffaaaa"
     - state: panel
       map: ["enum.WiresVisualLayers.MaintenancePanel"]
   - type: Machine
     board: BiofabricatorMachineCircuitboard
   - type: MaterialStorage
+    ignoreColor: true
     whitelist:
       tags:
       - Sheet
@@ -894,9 +922,8 @@
     idleState: icon
     runningState: icon
     staticRecipes:
-    - Truncheon
-    - Terminus
     - BoxLethalshot
+    - BoxShotgunLumen
     - BoxShotgunFlare
     - BoxShotgunPractice
     - BoxShotgunSlug
@@ -907,6 +934,7 @@
     - Handcuffs
     - ShellShotgun
     - ShellShotgunSlug
+    - ShellShotgunLumen
     - ShellShotgunFlare
     - ShellTranquilizer
     - MagazineBoxLightRifle
@@ -959,6 +987,7 @@
     - WeaponFlareGunSecurity
     - WeaponLaserCarbinePractice
     - Zipties
+    - GrenadeFlashBang # Goobstation
     - ShockCollar
     # # DeltaV - .38 special ammo - Add various .38 special ammo to security techfab # WWDP disable "special"
     # - MagazineBoxSpecial
@@ -968,10 +997,14 @@
     - HandheldGPSBasic
     - HandheldStationMap
     # WWDP gun bloat moved to tier 1 Arsenal research
+    # - MagazineNovaliteC1Empty
+    # - MagazineNovaliteC1
     # - MagazineLightRifleLowCapacityEmpty
     # - MagazineLightRifleLowCapacity
     # - SpeedLoaderRifleHeavy
     # - SpeedLoaderRifleHeavyEmpty
+    # - WeaponRifleNovaliteC1
+    # - WeaponRifleGestio
     # - MagazineMagnumLeverRifle # Goobstation
     # - MagazineMagnumLeverRifleEmpty # Goobstation
     # - MagazineNovaliteC1Empty
@@ -986,12 +1019,19 @@
     - MagazineShotgunBeanbag
     - ShellTranquilizer
     - BoxBeanbag
+    - BoxShotgunBirdshot
+    - BoxShotgun00Buckshot
+    - BoxShotgun0000Buckshot
+    - MagazineUniversalMagnumEmpty
+    - MagazineUniversalMagnum
     dynamicRecipes:
     # WWDP gun bloat moved to tier 1 Arsenal research
     - MagazineLightRifleLowCapacityEmpty
     - MagazineLightRifleLowCapacity
     - SpeedLoaderRifleHeavy
     - SpeedLoaderRifleHeavyEmpty
+    - WeaponRifleNovaliteC1
+    - WeaponRifleGestio
     - MagazineMagnumLeverRifle # Goobstation
     - MagazineMagnumLeverRifleEmpty # Goobstation
     - MagazineNovaliteC1Empty
@@ -1005,6 +1045,7 @@
 
     - WeaponSecurityRiotLauncher # WWDP
     - Truncheon
+    - Terminus
     - BoxShotgunIncendiary
     - BoxShotgunUranium
     - EncryptionKeySyndie
@@ -1100,12 +1141,35 @@
     - EnergySword
     - EnergySwordDouble
     - EnergyCutlass
+    - WeaponEnergyTurretAIMachineCircuitboard
+    - WeaponEnergyTurretStationMachineCircuitboard
+    - WeaponEnergyTurretAIControlPanelElectronics
+    - WeaponEnergyTurretStationControlPanelElectronics
     # - WeaponSubMachineGunFPA90 # WWDP no syndicate gear
     - WeaponSubMachineGunBRDIR25
     - WeaponPistolMk58
     - WeaponPistolN1984
     # - WeaponPistolViper  # WWDP no syndicate gear
-    # - WeaponPistolCobra  # WWDP no syndicate gear
+    # - WeaponPistolCobra # WWDP no syndicate gear
+    - MagazineRifleShrapnel
+    - MagazinePistolShrapnel
+    - MagazinePistolSubMachineGunShrapnel
+    - MagazineMagnumShrapnel
+    - MagazineLightRifleShrapnel
+    - MagazineCaselessRifleShrapnel
+    - MagazineCaselessRifleIncendiary
+    - MagazineCaselessRifleUranium
+    - MagazineBoxPistolShrapnel
+    - MagazineBoxMagnumShrapnel
+    - MagazineBoxLightRifleShrapnel
+    - MagazineBoxRifleShrapnel
+    - MagazineBoxCaselessRifleShrapnel
+    - MagazineBoxCaselessRifleIncendiary
+    - MagazineBoxCaselessRifleUranium
+    - MagazineUniversalMagnumUranium
+    - MagazineUniversalMagnumIncendiary
+    - MagazineUniversalMagnumShrapnel
+    - WeaponPistolUniversal
   - type: MaterialStorage
     whitelist:
       tags:
@@ -1143,6 +1207,7 @@
     runningState: icon
     staticRecipes:
     - BoxLethalshot
+    - BoxShotgunLumen
     - BoxShotgunFlare
     - BoxShotgunSlug
     - MagazineBoxLightRifle
@@ -1231,6 +1296,8 @@
     - Jug
     - Syringe
     - DisposableSyringe
+    - MiniSyringe
+    - SyringeGun
     - Implanter
     - PillCanister
     - BodyBag
@@ -1255,6 +1322,8 @@
     - ClothingEyesGlassesChemical
     - BoneGel # Shitmed Change
     - AACTablet # DeltaV
+    - VehicleWheelchairFolded # Goobstation - Vehicles
+    - SyringeCase # Morphine
     dynamicRecipes:
     - ChemicalPayload
     - CryostasisBeaker
@@ -1731,6 +1800,7 @@
     - CrazyGlue
     - PlushieRatvar
     - PlushieNar
+    - PlushieSanabi # WWDP edit
   - type: EmagLatheRecipes
     emagStaticRecipes:
     - PlushieGhost

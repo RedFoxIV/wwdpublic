@@ -35,6 +35,16 @@ public sealed class WhiteCVars
 
     #endregion
 
+    #region Character Customization
+    
+    /// <summary>
+    /// Players to set their own clown names.
+    /// </summary>
+    public static readonly CVarDef<bool> AllowCustomClownName =
+        CVarDef.Create("customize.allow_custom_clown_name", true, CVar.REPLICATED);
+    
+    #endregion
+
     #region TTS
 
         /// <summary>
@@ -111,5 +121,21 @@ public sealed class WhiteCVars
     /// </summary>
     public static readonly CVarDef<float> ShoveMassFactor =
         CVarDef.Create("game.shove_mass_factor", 5f, CVar.SERVER | CVar.ARCHIVE);
+    #endregion
+
+    #region Graphics
+
+    /// <summary>
+    /// What intensity will the grain shader be at
+    /// </summary>
+    public static readonly CVarDef<float> FilmGrainStrength =
+        CVarDef.Create("graphics.film_grain_strength", 50f, CVar.CLIENTONLY | CVar.ARCHIVE);
+
+    /// <summary>
+    /// Grain shader on/off
+    /// </summary>
+    public static readonly CVarDef<bool> FilmGrain =
+            CVarDef.Create("graphics.film_grain", true, CVar.CLIENTONLY | CVar.ARCHIVE);
+
     #endregion
 }

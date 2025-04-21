@@ -239,7 +239,7 @@
 - type: trait
   id: Steadfast
   category: Physical
-  points: -6
+  points: -4
   requirements:
   - !type:CharacterJobRequirement
     inverted: true
@@ -501,9 +501,6 @@
   - !type:CharacterItemGroupRequirement
     group: TraitsMind
   functions:
-  - !type:TraitAddTag #wwdp edit
-    tags:
-    - SpiderCraft
   - !type:TraitAddComponent
     components:
     - type: Sericulture
@@ -511,25 +508,44 @@
       productionLength: 2
       entityProduced: MaterialWebSilk1
       hungerCost: 1
+  - !type:TraitAddTag
+    tags:
+    - SpiderCraft
+
 
 - type: trait
   id: BionicArm
   category: Physical
-  points: -6 # WWDP-Edit
+  points: -8
+  enable: false # WD EDIT
   requirements:
-  - !type:CharacterJobRequirement
-    inverted: true
-    jobs:
-    - Prisoner # Bionics should be "Confiscated" from long term prisoners.
-    - Gladiator
+  - !type:CharacterLogicOrRequirement
+    requirements:
+    - !type:CharacterJobRequirement
+      jobs:
+      - Paramedic
+    - !type:CharacterDepartmentRequirement
+      departments:
+      - Security
+      - Command
+#       - Dignitary - WD EDIT
   - !type:CharacterItemGroupRequirement
     group: TraitsMind
+  - !type:CharacterTraitRequirement
+    inverted: true
+    traits:
+    - BionicPryArm
   functions:
-  - !type:TraitAddComponent
-    components:
-    - type: Prying
-      speedModifier: 1
-      pryPowered: false # WWDP-Edit
+  - !type:TraitCyberneticLimbReplacement
+    removeBodyPart: Arm
+    partSymmetry: Left
+    protoId: JawsOfLifeLeftArm
+    slotId: "left arm"
+  - !type:TraitCyberneticLimbReplacement
+    removeBodyPart: Arm
+    partSymmetry: Right
+    protoId: JawsOfLifeRightArm
+    slotId: "right arm"
   - !type:TraitPushDescription
     descriptionExtensions:
     - description: examine-bionic-arm-message
@@ -650,6 +666,8 @@
   - !type:CharacterDepartmentRequirement
     departments:
     - Security
+    - Command
+  #        - Dignitary
   - !type:CharacterTraitRequirement
     traits:
     - CyberEyes
@@ -732,6 +750,7 @@
     departments:
     - Security
     - Command
+  #        - Dignitary
   - !type:CharacterTraitRequirement
     traits:
     - CyberEyes
@@ -757,6 +776,20 @@
       - Biological
       - Inorganic
       - Silicon
+
+- type: trait
+  id: RestrictedGear
+  category: Physical
+  points: -10
+  enable: false # WD EDIT
+  requirements:
+  - !type:CVarRequirement
+    cvar: trait.restrictedgear_enabled
+    requiredValue: true
+  - !type:CharacterJobRequirement
+    inverted: true
+    jobs:
+    - Prisoner # Smuggling for prisoners = immediate jailbreak.
 
 - type: trait
   id: Redshirt
@@ -877,29 +910,35 @@
           Brute: -0.6
           Burn: -0.6
 
-- type: trait
-  id: BionicLeg
-  category: Physical
-  points: -10 # WD EDIT
-  requirements:
-  - !type:CharacterJobRequirement
-    inverted: true
-    jobs:
-    - Prisoner # Bionics should be "Confiscated" from long term prisoners.
-  - !type:CharacterItemGroupRequirement
-    group: TraitsMind
-  functions:
-  - !type:TraitReplaceComponent
-    components:
-    - type: SlowOnDamage # WWDP edit
-      speedModifierThresholds:
-        60: 0.85
-        80: 0.75
-  - !type:TraitPushDescription
-    descriptionExtensions:
-    - description: examine-bionic-leg-message
-      fontSize: 12
-      requireDetailRange: true
+# - type: trait
+#   id: BionicLeg
+#   category: Physical
+#   points: -8
+#   enable: false - WD EDIT
+#   requirements:
+#     - !type:CharacterJobRequirement
+#       inverted: true
+#       jobs:
+#         - Prisoner # Bionics should be "Confiscated" from long term prisoners.
+#     - !type:CharacterItemGroupRequirement
+#       group: TraitsMind
+#   functions:
+#     - !type:TraitPushDescription
+#       descriptionExtensions:
+#         - description: examine-bionic-leg-message
+#           fontSize: 12
+#           requireDetailRange: true
+#     - !type:TraitCyberneticLimbReplacement
+#       removeBodyPart: Leg
+#       partSymmetry: Left
+#       protoId: SpeedLeftLeg
+#       slotId: "left leg"
+#     - !type:TraitCyberneticLimbReplacement
+#       removeBodyPart: Leg
+#       partSymmetry: Right
+#       protoId: SpeedRightLeg
+#       slotId: "right leg"
+
 
 # - type: trait
 #  id: FlareShieldingModule
@@ -940,6 +979,8 @@
   - !type:CharacterDepartmentRequirement
     departments:
     - Security
+    - Command
+  #        - Dignitary
   - !type:CharacterSpeciesRequirement
     species:
     - IPC
@@ -1037,6 +1078,7 @@
     departments:
     - Security
     - Command
+  #        - Dignitary
   - !type:CharacterSpeciesRequirement
     species:
     - IPC
@@ -1124,5 +1166,100 @@
   - !type:TraitPushDescription
     descriptionExtensions:
     - description: examine-thermal-vision-message
+      fontSize: 12
+      requireDetailRange: true
+
+- type: trait
+  id: Bodybuilder
+  category: Physical
+  points: -6
+  requirements:
+  - !type:CharacterTraitRequirement
+    inverted: true
+    traits:
+    - Featherweight
+  functions:
+  - !type:TraitModifyDensity
+    densityModifier: 55
+    multiply: false
+  - !type:TraitPushDescription
+    descriptionExtensions:
+    - description: examine-bodybuilder-message
+      fontSize: 12
+      requireDetailRange: true
+
+- type: trait
+  id: Featherweight
+  category: Physical
+  points: 3
+  requirements:
+  - !type:CharacterTraitRequirement
+    inverted: true
+    traits:
+    - Bodybuilder
+  functions:
+  - !type:TraitModifyDensity
+    densityModifier: 0.5
+    multiply: true
+  - !type:TraitPushDescription
+    descriptionExtensions:
+    - description: examine-featherweight-message
+      fontSize: 12
+      requireDetailRange: true
+
+- type: trait
+  id: Vampirism # You may port this to EE, you have my permission!
+  category: Physical
+  points: -3
+  requirements:
+  - !type:CharacterJobRequirement
+    inverted: true
+    jobs:
+    - Borg
+    - MedicalBorg
+  - !type:CharacterSpeciesRequirement
+    inverted: true
+    species:
+    - IPC
+  functions:
+  - !type:TraitAddComponent
+    components:
+    - type: Vampirism
+      succDelay: 3
+      specialDigestible: # Vampires cannot eat food chat is that real
+        tags:
+        - Pill
+        - Crayon
+        - Paper
+
+- type: trait
+  id: BionicPryArm
+  category: Physical
+  points: -3
+  requirements:
+  - !type:CharacterJobRequirement
+    inverted: true
+    jobs:
+    - Prisoner # Bionics should be "Confiscated" from long term prisoners.
+  - !type:CharacterItemGroupRequirement
+    group: TraitsMind
+  - !type:CharacterTraitRequirement
+    inverted: true
+    traits:
+    - BionicArm
+  functions:
+  - !type:TraitCyberneticLimbReplacement
+    removeBodyPart: Arm
+    partSymmetry: Left
+    protoId: CrowbarLeftArm
+    slotId: "left arm"
+  - !type:TraitCyberneticLimbReplacement
+    removeBodyPart: Arm
+    partSymmetry: Right
+    protoId: CrowbarRightArm
+    slotId: "right arm"
+  - !type:TraitPushDescription
+    descriptionExtensions:
+    - description: examine-bionic-pryarm-message
       fontSize: 12
       requireDetailRange: true

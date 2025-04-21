@@ -59,6 +59,7 @@
   - MagazinePistolSubMachineGunIncendiary
   - MagazineMagnumIncendiary
   - MagazineLightRifleIncendiary
+  - MagazineCaselessRifleIncendiary
   - SpeedLoaderMagnumIncendiary
   - SpeedLoaderRifleHeavyIncendiary
   - MagazineShotgunIncendiary
@@ -66,8 +67,10 @@
   - MagazineBoxMagnumIncendiary
   - MagazineBoxLightRifleIncendiary
   - MagazineBoxRifleIncendiary
+  - MagazineBoxCaselessRifleIncendiary
   - CartridgeSpecialIncendiary
   - MagazineBoxSpecialIncendiary
+  - MagazineUniversalMagnumIncendiary
 
 - type: technology
   id: UraniumMunitions
@@ -84,15 +87,18 @@
   - MagazinePistolSubMachineGunUranium
   - MagazineMagnumUranium
   - MagazineLightRifleUranium
+  - MagazineCaselessRifleUranium
   - SpeedLoaderMagnumUranium
   - SpeedLoaderRifleHeavyUranium # Frontier
   - MagazineBoxPistolUranium
   - MagazineBoxMagnumUranium
   - MagazineBoxLightRifleUranium
   - MagazineBoxRifleUranium
+  - MagazineBoxCaselessRifleUranium
   - BoxShotgunUranium
   - CartridgeSpecialUranium
   - MagazineBoxSpecialUranium
+  - MagazineUniversalMagnumUranium
 
 # Tier 2
 
@@ -130,6 +136,29 @@
   # TODO: Add "Explosive Ammunition" to this tech to make it waaaay more interesting.
 
 - type: technology
+  id: ShrapnelMunitions
+  name: research-technology-shrapnel-munitions
+  icon:
+    sprite: Objects/Weapons/Guns/Ammunition/Casings/shotgun_shell.rsi
+    state: base
+  discipline: Arsenal
+  tier: 2
+  cost: 7500
+  recipeUnlocks:
+  - MagazineRifleShrapnel
+  - MagazinePistolShrapnel
+  - MagazinePistolSubMachineGunShrapnel
+  - MagazineMagnumShrapnel
+  - MagazineLightRifleShrapnel
+  - MagazineCaselessRifleShrapnel
+  - MagazineBoxPistolShrapnel
+  - MagazineBoxMagnumShrapnel
+  - MagazineBoxLightRifleShrapnel
+  - MagazineBoxRifleShrapnel
+  - MagazineBoxCaselessRifleShrapnel
+  - MagazineUniversalMagnumShrapnel
+
+- type: technology
   id: AdvancedWeapons
   name: research-technology-advanced-weapons
   icon:
@@ -149,7 +178,6 @@
   - ShuttleGunPerforatorCircuitboard
   - ShuttleGunFriendshipCircuitboard
   - WeaponXrayCannon
-  - WeaponLaserCannon
   - WeaponGunLaserCarbineAutomatic
   - WeaponLaserCannon
   - WeaponMechCombatSolarisLaser # Goobstation
@@ -158,6 +186,7 @@
   # - WeaponPistolViper # WWDP no syndicate guns
   # - WeaponPistolCobra # WWDP no syndicate guns
   - Terminus
+  - WeaponPistolUniversal
   technologyPrerequisites:
   - BasicWeapons
 
@@ -179,6 +208,24 @@
   - ClothingOuterHardsuitJuggernautReverseEngineered
   technologyPrerequisites:
   - AdvancedTacsuits
+  softCapContribution: 1.5
+
+- type: technology
+  id: LaserTurrets
+  name: research-technology-laser-sentry-turrets
+  icon:
+    sprite: Objects/Weapons/Guns/Turrets/sentry_turret.rsi
+    state: base
+  discipline: Arsenal
+  tier: 3
+  cost: 20000
+  recipeUnlocks:
+  - WeaponEnergyTurretAIMachineCircuitboard
+  - WeaponEnergyTurretStationMachineCircuitboard
+  - WeaponEnergyTurretAIControlPanelElectronics
+  - WeaponEnergyTurretStationControlPanelElectronics
+  technologyPrerequisites:
+  - AdvancedWeapons
   softCapContribution: 1.5
 
 - type: technology

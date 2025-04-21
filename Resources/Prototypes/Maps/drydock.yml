@@ -14,7 +14,7 @@
           !type:NanotrasenNameGenerator
           prefixCreator: 'WWDP'
       - type: StationEmergencyShuttle
-        emergencyShuttlePath: /Maps/Shuttles/DeltaV/NTES_Delta.yml
+        emergencyShuttlePath: /Maps/_White/Shuttles/emergency_turtle.yml
       - type: StationJobs
         overflowJobs:
         - Passenger
@@ -70,5 +70,5 @@
           Musician: [ 1, 1 ]
           Reporter: [ 1, 1 ]
           Passenger: [ -1, -1 ]
-          Hobo: [ 1, 1 ]
+          # Hobo: [ 1, 1 ]
 
