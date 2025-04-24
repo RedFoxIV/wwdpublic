@@ -259,9 +259,9 @@ namespace Content.Shared.Storage
             EntityAngles = entityAngles;
         }
     }
-
+    
     [ByRefEvent]
-    public record struct StorageInteractAttemptEvent(bool Silent, bool Cancelled = false);
+    public record struct StorageInteractAttemptEvent(EntityUid User, bool Silent, bool Cancelled = false); // WWDP EDIT - Added User field
 
     [ByRefEvent]
     public record struct StorageInteractUsingAttemptEvent(bool Cancelled = false);

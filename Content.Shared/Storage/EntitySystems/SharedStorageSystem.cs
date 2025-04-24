@@ -1545,7 +1545,7 @@ public abstract class SharedStorageSystem : EntitySystem
         if (!canInteract)
             return false;
 
-        var ev = new StorageInteractAttemptEvent(silent);
+        var ev = new StorageInteractAttemptEvent(user, silent); // WWDP EDIT
         RaiseLocalEvent(storage, ref ev);
 
         return !ev.Cancelled;

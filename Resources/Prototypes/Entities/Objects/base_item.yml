@@ -8,6 +8,8 @@
   - type: Clickable
   - type: InteractionOutline
   - type: MovedByPressure
+  - type: InteractionLimiter # СБЭУ WWDP
+  - type: StorageInteractionLimiter # СБЭУ WWDP
   - type: EmitSoundOnCollide
     sound:
       collection: WeakHit

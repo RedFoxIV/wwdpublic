@@ -58,6 +58,17 @@ public partial class InventorySystem
                && (slot.SlotFlags & flags) == flags;
     }
 
+    // WWDP EDIT START
+    /// <summary>
+    ///     Returns true if the given entity is equipped to an inventory slot with any of the given inventory slot flags.
+    /// </summary>
+    public bool InSlotWithAnyFlags(Entity<TransformComponent?, MetaDataComponent?> entity, SlotFlags flags)
+    {
+        return TryGetContainingSlot(entity, out var slot)
+               && (slot.SlotFlags & flags) != 0;
+    }
+    // WWDP EDIT END
+
     public bool SpawnItemInSlot(EntityUid uid, string slot, string prototype, bool silent = false, bool force = false, InventoryComponent? inventory = null)
     {
         if (!Resolve(uid, ref inventory, false))
