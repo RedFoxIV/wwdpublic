@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Content.Server.Administration.Logs;
 using Content.Server.Atmos.Components;
 using Content.Shared.Alert;
@@ -6,9 +7,13 @@ using Content.Shared.Atmos;
 using Content.Shared.Damage;
 using Content.Shared.Database;
 using Content.Shared.FixedPoint;
+using Content.Shared.Hands;
+using Content.Shared.Hands.Components;
+using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Inventory;
 using Content.Shared.Inventory.Events;
 using Content.Shared.Mood;
+using Robust.Server.Containers;
 using Robust.Shared.Containers;
 
 namespace Content.Server.Atmos.EntitySystems
@@ -20,6 +25,8 @@ namespace Content.Server.Atmos.EntitySystems
         [Dependency] private readonly AlertsSystem _alertsSystem = default!;
         [Dependency] private readonly IAdminLogManager _adminLogger = default!;
         [Dependency] private readonly InventorySystem _inventorySystem = default!;
+        [Dependency] private readonly SharedHandsSystem _hands = default!;
+        [Dependency] private readonly ContainerSystem _container = default!;
 
         [Dependency] private readonly ILogManager _logManager = default!;
 
@@ -30,8 +37,12 @@ namespace Content.Server.Atmos.EntitySystems
 
         public override void Initialize()
         {
-            SubscribeLocalEvent<PressureProtectionComponent, GotEquippedEvent>(OnPressureProtectionEquipped);
-            SubscribeLocalEvent<PressureProtectionComponent, GotUnequippedEvent>(OnPressureProtectionUnequipped);
+            //SubscribeLocalEvent<PressureProtectionComponent, GotEquippedEvent>(OnPressureProtectionEquipped);
+            //SubscribeLocalEvent<PressureProtectionComponent, GotUnequippedEvent>(OnPressureProtectionUnequipped);
+            SubscribeLocalEvent<BarotraumaComponent, EntInsertedIntoContainerMessage>(OnItemInsertedIntoContainer);
+            SubscribeLocalEvent<BarotraumaComponent, EntRemovedFromContainerMessage>(OnItemRemovedFromContainer);
+            SubscribeLocalEvent<BarotraumaComponent, DidEquipEvent>(OnPressureProtectionEquipped);
+            SubscribeLocalEvent<BarotraumaComponent, DidUnequipEvent>(OnPressureProtectionUnequipped);
             SubscribeLocalEvent<PressureProtectionComponent, ComponentInit>(OnPressureProtectionChanged); // Goobstation - Update component state on toggle
             SubscribeLocalEvent<PressureProtectionComponent, ComponentRemove>(OnPressureProtectionChanged); // Goobstation - Update component state on toggle
 
@@ -41,21 +52,31 @@ namespace Content.Server.Atmos.EntitySystems
             // _sawmill = _logManager.GetSawmill("barotrauma");
         }
 
+        // WWDP EDIT START
         private void OnPressureImmuneInit(EntityUid uid, PressureImmunityComponent pressureImmunity, ComponentInit args)
         {
-            if (TryComp<BarotraumaComponent>(uid, out var barotrauma))
-            {
-                barotrauma.HasImmunity = true;
-            }
+            AddPressureImmunitySource(uid, "Innate");
         }
-
+        
         private void OnPressureImmuneRemove(EntityUid uid, PressureImmunityComponent pressureImmunity, ComponentRemove args)
         {
-            if (TryComp<BarotraumaComponent>(uid, out var barotrauma))
-            {
-                barotrauma.HasImmunity = false;
-            }
+            RemovePressureImmunitySource(uid, "Innate");
         }
+
+        public bool AddPressureImmunitySource(EntityUid uid, string source, BarotraumaComponent? barotrauma = null)
+        {
+            if (!Resolve(uid, ref barotrauma))
+                return false;
+            return barotrauma.ImmunitySources.Add(source);
+        }
+
+        public bool RemovePressureImmunitySource(EntityUid uid, string source, BarotraumaComponent? barotrauma = null)
+        {
+            if (!Resolve(uid, ref barotrauma))
+                return false;
+            return barotrauma.ImmunitySources.Remove(source);
+        }
+        // WWDP EDIT END
 
         // Goobstation - Modsuits - Update component state on toggle
         private void OnPressureProtectionChanged(EntityUid uid, PressureProtectionComponent pressureProtection, EntityEventArgs args)
@@ -88,40 +109,47 @@ namespace Content.Server.Atmos.EntitySystems
                 UpdateCachedResistances(uid, barotrauma);
             }
         }
-
-        private void OnPressureProtectionEquipped(EntityUid uid, PressureProtectionComponent pressureProtection, GotEquippedEvent args)
+        private void OnItemInsertedIntoContainer(EntityUid uid, BarotraumaComponent barotrauma, EntInsertedIntoContainerMessage args)
         {
-            if (TryComp<BarotraumaComponent>(args.Equipee, out var barotrauma) && barotrauma.ProtectionSlots.Contains(args.Slot))
-            {
-                UpdateCachedResistances(args.Equipee, barotrauma);
-            }
+            if (_inventorySystem.IsInHandOrInventory(args.Container))
+                UpdateCachedResistances(uid, barotrauma);
         }
 
-        private void OnPressureProtectionUnequipped(EntityUid uid, PressureProtectionComponent pressureProtection, GotUnequippedEvent args)
+        private void OnItemRemovedFromContainer(EntityUid uid, BarotraumaComponent barotrauma, EntRemovedFromContainerMessage args)
         {
-            if (TryComp<BarotraumaComponent>(args.Equipee, out var barotrauma) && barotrauma.ProtectionSlots.Contains(args.Slot))
-            {
-                UpdateCachedResistances(args.Equipee, barotrauma);
-            }
+            if (_inventorySystem.IsInHandOrInventory(args.Container))
+                UpdateCachedResistances(uid, barotrauma);
+        }
+
+        private void OnPressureProtectionEquipped(EntityUid uid, BarotraumaComponent barotrauma, DidEquipEvent args)
+        {
+            UpdateCachedResistances(args.Equipee, barotrauma);
+        }
+
+        private void OnPressureProtectionUnequipped(EntityUid uid, BarotraumaComponent barotrauma, DidUnequipEvent args)
+        {
+            UpdateCachedResistances(args.Equipee, barotrauma);
         }
 
         /// <summary>
         /// Computes the pressure resistance for the entity coming from the equipment and any innate resistance.
         /// The ProtectionSlots field of the Barotrauma component specifies which parts must be protected for the protection to have any effet.
         /// </summary>
-        private void UpdateCachedResistances(EntityUid uid, BarotraumaComponent barotrauma)
+        public void UpdateCachedResistances(EntityUid uid, BarotraumaComponent? barotrauma = null) // WWDP EDIT private -> public
         {
-
+            if (!Resolve(uid, ref barotrauma))
+                return;
+            // WWDP EDIT START
+            var hPModifier = float.MinValue;
+            var hPMultiplier = float.MinValue;
+            var lPModifier = float.MaxValue;
+            var lPMultiplier = float.MaxValue;
             if (barotrauma.ProtectionSlots.Count != 0)
             {
                 if (!TryComp(uid, out InventoryComponent? inv) || !TryComp(uid, out ContainerManagerComponent? contMan))
                 {
                     return;
                 }
-                var hPModifier = float.MinValue;
-                var hPMultiplier = float.MinValue;
-                var lPModifier = float.MaxValue;
-                var lPMultiplier = float.MaxValue;
 
                 foreach (var slot in barotrauma.ProtectionSlots)
                 {
@@ -146,12 +174,29 @@ namespace Content.Server.Atmos.EntitySystems
                     lPModifier = Math.Min(lPModifier, itemLowModifier.Value);
                     lPMultiplier = Math.Min(lPMultiplier, itemLowMultiplier.Value);
                 }
-
-                barotrauma.HighPressureModifier = hPModifier;
-                barotrauma.HighPressureMultiplier = hPMultiplier;
-                barotrauma.LowPressureModifier = lPModifier;
-                barotrauma.LowPressureMultiplier = lPMultiplier;
             }
+
+            foreach (var stuffUid in _inventorySystem.GetHandOrInventoryEntities(uid))
+            {
+                if (TryGetSpecialPressureProtectionValues(stuffUid,
+                        out var itemHighMultiplier,
+                        out var itemHighModifier,
+                        out var itemLowMultiplier,
+                        out var itemLowModifier))
+                {
+                    // since these protections are special case, the minmax behavior is inverted - the strongest special protection will be used
+                    hPModifier = itemHighModifier is null ? hPModifier : Math.Min(hPModifier, itemHighModifier.Value);
+                    hPMultiplier = itemHighMultiplier is null ? hPMultiplier : Math.Min(hPMultiplier, itemHighMultiplier.Value);
+                    lPModifier = itemLowModifier is null ? lPModifier : Math.Max(lPModifier, itemLowModifier.Value);
+                    lPMultiplier = itemLowMultiplier is null ? lPMultiplier : Math.Max(lPMultiplier, itemLowMultiplier.Value);x
+                }
+            }
+
+            barotrauma.HighPressureModifier = hPModifier;
+            barotrauma.HighPressureMultiplier = hPMultiplier;
+            barotrauma.LowPressureModifier = lPModifier;
+            barotrauma.LowPressureMultiplier = lPMultiplier;
+            // WWDP EDIT END
 
             // any innate pressure resistance ?
             if (TryGetPressureProtectionValues(uid,
@@ -214,6 +259,7 @@ namespace Content.Server.Atmos.EntitySystems
                 LowPressureMultiplier = comp.LowPressureMultiplier,
                 LowPressureModifier = comp.LowPressureModifier
             };
+
             RaiseLocalEvent(ent, ref ev);
             highMultiplier = ev.HighPressureMultiplier;
             highModifier = ev.HighPressureModifier;
@@ -221,6 +267,32 @@ namespace Content.Server.Atmos.EntitySystems
             lowModifier = ev.LowPressureModifier;
             return true;
         }
+
+        // WWDP EDIT START
+        public bool TryGetSpecialPressureProtectionValues(
+            Entity<PressureProtectionComponent?> ent,
+            out float? highMultiplier,
+            out float? highModifier,
+            out float? lowMultiplier,
+            out float? lowModifier)
+        {
+            highMultiplier = null;
+            highModifier = null;
+            lowMultiplier = null;
+            lowModifier = null;
+
+            var ev = new GetSpecialPressureProtectionValuesEvent(); // all nulls
+
+            RaiseLocalEvent(ent, ref ev);
+            if (!ev.Handled)
+                return false;
+            highMultiplier = ev.HighPressureMultiplier;
+            highModifier = ev.HighPressureModifier;
+            lowMultiplier = ev.LowPressureMultiplier;
+            lowModifier = ev.LowPressureModifier;
+            return true;
+        }
+        // WWDP EDIT END
 
         public override void Update(float frameTime)
         {

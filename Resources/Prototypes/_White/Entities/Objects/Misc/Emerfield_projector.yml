@@ -1,0 +1,51 @@
+- type: entity
+  parent: BaseItem
+  id: EmerfieldProjector
+  name: emerfield projector
+  description: Personal pressure shield projector. Gives you a few precious seconds to find escape from the cold clutches of space, but does nothing to prevent your death from other, often related, hazards.   
+  components:
+  - type: Sprite
+    sprite: Objects/Devices/Holoprojectors/atmos.rsi
+    state: icon
+  - type: StaticPrice
+    price: 380
+  #- type: ReverseEngineering # Nyano
+  #  difficulty: 3
+  #  recipes:
+  #    - HolofanProjector
+  - type: ToggleableSpecialPressureImmunity
+    lowPressureMultiplier: 1000
+  - type: ItemToggle
+    predictable: false
+    soundActivate:
+      collection: sparks
+      params:
+        variation: 0.125
+    soundDeactivate:
+      collection: sparks
+      params:
+        variation: 0.125
+    soundFailToActivate:
+      path: /Audio/Machines/button.ogg
+      params:
+        variation: 0.125
+  - type: ToggleInSlots
+    inHands: true
+  - type: ToggleCellDraw
+  - type: ToggleCellDrawUpfront
+    activateCost: 50
+  - type: PowerCellDraw
+    drawRate: 12.5
+  - type: PowerCellSlot
+    fitsInCharger: false
+    cellSlotId: cell_slot
+  - type: ItemSlots
+    slots:
+      cell_slot:
+        name: power-cell-slot-component-slot-name-default
+        startingItem: PowerCellMedium
+        whitelist:
+          components:
+            - PowerCell
+  
+  

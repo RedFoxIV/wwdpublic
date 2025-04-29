@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Content.Shared.Hands.Components;
 using Content.Shared.Storage.EntitySystems;
+using Robust.Shared.Containers;
 using Robust.Shared.Prototypes;
 
 namespace Content.Shared.Inventory;
@@ -34,6 +35,25 @@ public partial class InventorySystem
             yield return item;
         }
     }
+    // WWDP EDIT START
+    public bool IsInHandOrInventory(EntityUid uid)
+    {
+        if (!_containerSystem.TryGetContainingContainer(uid, out var container))
+            return false;
+        return IsInHandOrInventory(container);
+    }
+
+#pragma warning disable RA0002 // i hate how it looks if i don't wrap the entire method in these
+    public bool IsInHandOrInventory(BaseContainer baseContainer)
+    {
+        if (TryComp<HandsComponent>(baseContainer.Owner, out var hands) && hands.Hands.Keys.Contains(baseContainer.ID))
+            return true;
+        if (baseContainer is ContainerSlot cont && TryComp<InventoryComponent>(baseContainer.Owner, out var inventory) && Array.IndexOf(inventory.Containers, cont) >= 0) // all my homies hate linq
+            return true;
+        return false;
+    }
+#pragma warning restore RA0002
+    // WWDP EDIT END
 
     /// <summary>
     ///     Returns the definition of the inventory slot that the given entity is currently in..

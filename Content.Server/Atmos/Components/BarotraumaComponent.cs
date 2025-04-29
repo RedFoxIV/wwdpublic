@@ -45,8 +45,14 @@ namespace Content.Server.Atmos.Components
         /// <summary>
         /// Whether the entity is immuned to pressure (i.e possess the PressureImmunity component)
         /// </summary>
+        [ViewVariables(VVAccess.ReadOnly)]
+        public bool HasImmunity => ImmunitySources.Count > 0 || ForceImmunity;
+
         [ViewVariables(VVAccess.ReadWrite)]
-        public bool HasImmunity = false;
+        public bool ForceImmunity = false;
+
+        [ViewVariables(VVAccess.ReadWrite)]
+        public HashSet<string> ImmunitySources = new();
 
         [DataField]
         public ProtoId<AlertPrototype> HighPressureAlert = "HighPressure";
