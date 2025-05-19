@@ -92,3 +92,14 @@
     Silver: 40
     Gold: 40
     Steel: 80
+
+- type: latheRecipe
+  id: AdvancedRegulatorLamp
+  result: AdvancedRegulatorLamp
+  category: Ammo
+  completetime: 20
+  materials:
+    Steel: 400
+    Glass: 400
+    Gold: 200
+    Silver: 200
