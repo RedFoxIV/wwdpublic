@@ -5,14 +5,18 @@
   description: Personal pressure shield projector. Gives you a few precious seconds to find escape from the cold clutches of space, but does nothing to prevent your death from other, often related, hazards.   
   components:
   - type: Sprite
-    sprite: Objects/Devices/Holoprojectors/atmos.rsi
-    state: icon
+    sprite: _White/Objects/Devices/emershield.rsi
+    layers:
+    - state: icon
+      map: [ "base" ]
+    - state: empty
+      map: [ "empty" ]
+	  visible: false
+    - state: active
+      map: [ "active" ]
+	  visible: false
   - type: StaticPrice
     price: 380
-  #- type: ReverseEngineering # Nyano
-  #  difficulty: 3
-  #  recipes:
-  #    - HolofanProjector
   - type: ToggleableSpecialPressureImmunity
     lowPressureMultiplier: 1000
   - type: ItemToggle
@@ -33,9 +37,9 @@
     inHands: true
   - type: ToggleCellDraw
   - type: ToggleCellDrawUpfront
-    activateCost: 50
+    activateCost: 175
   - type: PowerCellDraw
-    drawRate: 12.5
+    drawRate: 27.5
   - type: PowerCellSlot
     fitsInCharger: false
     cellSlotId: cell_slot
@@ -47,5 +51,19 @@
         whitelist:
           components:
             - PowerCell
-  
-  
+  - type: GenericVisualizer
+    visuals:
+      enum.ToggleVisuals.Toggled:
+        base:
+          True: {visible: false}
+          False: {visible: true}
+        active:
+          True: {visible: true}
+          False: {visible: false}
+  - type: ItemMapper
+    mapLayers:
+      empty:
+        maxCount: 0
+        whitelist:
+          tags:
+          - PowerCell
