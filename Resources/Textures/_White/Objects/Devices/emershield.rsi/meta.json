@@ -1,0 +1,62 @@
+{
+    "version": 1,
+    "license": "CC-BY-SA-3.0",
+    "copyright": "White Dream",
+    "size": {
+        "x": 32,
+        "y": 32
+    },
+    "states": [
+		{
+		"name": "icon"
+		},
+		{
+		"name": "empty"
+		},
+		{
+		"name": "battery"
+		},
+		{
+		"name": "active",
+		"delays": [
+		  [
+			0.1,
+			0.1
+		  ]
+		]
+		},
+		{
+		"name": "shield",
+		"delays": [
+		  [
+			0.1,
+			0.1,
+			0.1
+		  ]
+		]
+		},
+		{
+		"name": "test",
+		"delays": [
+		  [
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1
+		  ]
+		]
+		}
+    ]
+}
