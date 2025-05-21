@@ -188,7 +188,7 @@ namespace Content.Server.Atmos.EntitySystems
                     hPModifier = itemHighModifier is null ? hPModifier : Math.Min(hPModifier, itemHighModifier.Value);
                     hPMultiplier = itemHighMultiplier is null ? hPMultiplier : Math.Min(hPMultiplier, itemHighMultiplier.Value);
                     lPModifier = itemLowModifier is null ? lPModifier : Math.Max(lPModifier, itemLowModifier.Value);
-                    lPMultiplier = itemLowMultiplier is null ? lPMultiplier : Math.Max(lPMultiplier, itemLowMultiplier.Value);x
+                    lPMultiplier = itemLowMultiplier is null ? lPMultiplier : Math.Max(lPMultiplier, itemLowMultiplier.Value);
                 }
             }
 
