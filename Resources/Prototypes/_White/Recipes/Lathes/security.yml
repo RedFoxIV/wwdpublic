@@ -97,9 +97,18 @@
   id: AdvancedRegulatorLamp
   result: AdvancedRegulatorLamp
   category: Ammo
-  completetime: 20
+  completetime: 15
   materials:
-    Steel: 400
-    Glass: 400
+    Steel: 600
+    Glass: 600
     Gold: 200
     Silver: 200
+
+- type: latheRecipe
+  id: BasicRegulatorLamp
+  result: BasicRegulatorLamp
+  category: Ammo
+  completetime: 15
+  materials:
+    Steel: 600
+    Glass: 600
