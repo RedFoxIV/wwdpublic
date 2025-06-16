@@ -17,7 +17,7 @@ public sealed class DebrainedSystem : EntitySystem
 {
     [Dependency] private readonly SharedBodySystem _bodySystem = default!;
     [Dependency] private readonly PopupSystem _popupSystem = default!;
-    [Dependency] private readonly StandingStateSystem _standingSystem = default!;
+    [Dependency] private readonly SharedStandingStateSystem _standingSystem = default!;
     public override void Initialize()
     {
         base.Initialize();

@@ -14,7 +14,7 @@ using Content.Shared.Movement.Events; // WWDP
 
 namespace Content.Shared.Standing;
 
-public sealed class StandingStateSystem : EntitySystem
+public abstract class SharedStandingStateSystem : EntitySystem // WWDP EDIT
 {
     [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;

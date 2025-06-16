@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>13</LangVersion>
+        <TargetFrameworks>net9.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Title></Title>
+        <Description>An interpreter for the Lua language</Description>
+        <Copyright>Copyright © 2014-2015, Marco Mastropaolo</Copyright>
+        <Company>http://www.moonsharp.org</Company>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\RobustToolbox\Robust.Shared\Robust.Shared.csproj" />
+    </ItemGroup>
+
+</Project>

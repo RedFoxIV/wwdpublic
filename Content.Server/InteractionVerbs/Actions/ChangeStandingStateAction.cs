@@ -23,7 +23,7 @@ public sealed partial class ChangeStandingStateAction : InteractionAction
 
     public override bool Perform(InteractionArgs args, InteractionVerbPrototype proto, VerbDependencies deps)
     {
-        var stateSystem = deps.EntMan.System<StandingStateSystem>();
+        var stateSystem = deps.EntMan.System<SharedStandingStateSystem>();
 
         if (!deps.EntMan.TryGetComponent<StandingStateComponent>(args.Target, out var state)
             || args.TryGetBlackboard("standing", out StandingState oldStanding) && oldStanding != state.CurrentState)

@@ -35,7 +35,7 @@ namespace Content.Shared.Damage.Systems
         [Dependency] private readonly MeleeSoundSystem _meleeSound = default!;
         [Dependency] private readonly IPrototypeManager _protoManager = default!;
         [Dependency] private readonly ContestsSystem _contests = default!;
-        [Dependency] private readonly StandingStateSystem _standing = default!;
+        [Dependency] private readonly SharedStandingStateSystem _standing = default!;
 
         public override void Initialize()
         {

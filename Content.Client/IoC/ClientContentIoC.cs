@@ -62,6 +62,7 @@ namespace Content.Client.IoC
             collection.Register<NanoChatSystem>();
             collection.Register<MappingManager>();
             collection.Register<DebugMonitorManager>();
+            collection.Register<ILuaScriptClient, LuaScriptClient>(); // WWDP EDIT
         }
     }
 }

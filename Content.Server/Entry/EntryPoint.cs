@@ -53,6 +53,7 @@ namespace Content.Server.Entry
         public override void Init()
         {
             base.Init();
+            IoCManager.Instance!.Register<ILuaScriptHost, LuaScriptHost>(); // WWDP EDIT
 
             var cfg = IoCManager.Resolve<IConfigurationManager>();
             var res = IoCManager.Resolve<IResourceManager>();

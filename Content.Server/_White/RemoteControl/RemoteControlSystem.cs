@@ -20,8 +20,6 @@ using Content.Shared.Popups;
 using Content.Shared.Power;
 using Content.Shared.Verbs;
 using Content.Shared.Whitelist;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Robust.Shared.GameObjects;
 using Robust.Shared.Player;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;

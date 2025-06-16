@@ -10,7 +10,7 @@ namespace Content.Shared._White.Animations;
 public abstract class SharedFlipOnHitSystem : EntitySystem
 {
     [Dependency] private readonly IGameTiming _timing = default!;
-    [Dependency] private readonly StandingStateSystem _standingState = default!;
+    [Dependency] private readonly SharedStandingStateSystem _standingState = default!;
 
     public override void Initialize()
     {

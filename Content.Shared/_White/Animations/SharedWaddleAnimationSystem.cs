@@ -10,7 +10,7 @@ namespace Content.Shared._White.Animations;
 public abstract class SharedWaddleAnimationSystem : EntitySystem
 {
     [Dependency] protected readonly IGameTiming Timing = default!;
-    [Dependency] private readonly StandingStateSystem _standingState = default!;
+    [Dependency] private readonly SharedStandingStateSystem _standingState = default!;
     [Dependency] private readonly SharedGravitySystem _gravity = default!;
     [Dependency] private readonly SharedBuckleSystem _buckle = default!;
 

@@ -8,7 +8,7 @@ using Robust.Shared.Random;
 
 namespace Content.Server.Standing;
 
-public sealed class StandingStateSystem : EntitySystem
+public sealed class StandingStateSystem : SharedStandingStateSystem
 {
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly SharedHandsSystem _handsSystem = default!;
