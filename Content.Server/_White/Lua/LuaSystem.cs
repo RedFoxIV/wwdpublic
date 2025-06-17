@@ -2,12 +2,15 @@ using Content.Server.Speech;
 using Content.Shared.Doors;
 using JetBrains.Annotations;
 using JetBrains.FormatRipper.Pe;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using MoonSharp.Interpreter;
 using Robust.Server.GameObjects;
 using Robust.Shared.GameObjects;
+using Robust.Shared.GameStates;
 using Robust.Shared.Map;
 using Robust.Shared.Player;
 using Robust.Shared.Reflection;
+using Robust.Shared.Utility;
 using System.Collections.Frozen;
 using System.ComponentModel.Design;
 using System.Diagnostics;
@@ -15,6 +18,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
+using System.Text;
 
 namespace Content.Server._White.Lua;
 
@@ -23,6 +27,7 @@ public sealed class LuaSystem : EntitySystem
     [Dependency] private readonly IEntitySystemManager _entSysMan = default!;
     [Dependency] private readonly IDependencyCollection _dependency = default!;
     [Dependency] private readonly IReflectionManager _refl = default!;
+    [Dependency] private readonly ILuaScriptHost _luaHost = default!;
 
     FrozenDictionary<string, EntitySystem> _exposedSystems = default!;
     FrozenDictionary<string, object> _exposedServices = default!;
@@ -34,6 +39,7 @@ public sealed class LuaSystem : EntitySystem
     Dictionary<string, Script> _environments = new();
     public IReadOnlyDictionary<string, Script> Environments => _environments;
 
+    string[] _baselineKeys = default!;
     public override void Initialize()
     {
 
@@ -46,33 +52,47 @@ public sealed class LuaSystem : EntitySystem
 
         UserData.RegisterType(typeof(ServerEntityManager));
 
+        _luaHost.SystemCrutch(this);
 
+        var baseline = CreateScript();
+        List<string> keys = new();
+        foreach(var dynvalkey in baseline.Globals.Keys)
+        {
+            string strkey = dynvalkey.CastToString();
+            if (strkey is not null)
+                keys.Add(strkey);
+        }
+        _baselineKeys = keys.ToArray();
 
     }
-    public bool NewEnvironment(string envName)
+    public bool CreateEnvironment(string envName)
     {
         if (_environments.ContainsKey(envName))
             return false;
-        var env = new Script(_defaultModules);
-        env.Globals["systems"] = _exposedSystems;
-        env.Globals["services"] = _exposedServices;
-        env.Globals["CreateEvent"] = _exposedEventCtors;
-        env.Globals["EntMan"] = EntityManager;
-        foreach(var kvp in _exposedHelperMethods)
-        {
-            env.Globals[kvp.Key] = kvp.Value;
-        }
+        var env = CreateScript();
         _environments.Add(envName, env);
         return true;
     }
 
+    private Script CreateScript()
+    {
+        var env = new Script(_defaultModules);
+        env.Globals["systems"] = _exposedSystems;
+        env.Globals["services"] = _exposedServices;
+        env.Globals["createevent"] = _exposedEventCtors;
+        env.Globals["entman"] = EntityManager;
+        //env.Options.DebugPrint = ()=>{};
+        foreach (var kvp in _exposedHelperMethods)
+        {
+            env.Globals[kvp.Key] = kvp.Value;
+        }
+
+        return env;
+    }
+
     public bool DeleteEnvironment(string envName)
     {
-        if (_environments.TryGetValue(envName, out var env))
-            return false;
-
-        _environments.Remove(envName);
-        return true;
+        return _environments.Remove(envName);
     }
 
     public override void Update(float frameTime)
@@ -92,6 +112,18 @@ public sealed class LuaSystem : EntitySystem
 
         return env.DoString(lua);
     }
+
+    public string? GetEnvironmentState(string envName)
+    {
+        if (!_environments.TryGetValue(envName, out var env))
+            return null;
+
+
+        return env.Globals.TableToString(ignoreKeys: _baselineKeys);
+    }
+
+
+
 
     private string timestr(float ms) => ms < 1000 ? $"{ms}ms" : $"{ms / 1000f}s";
 
@@ -154,12 +186,17 @@ public sealed class LuaSystem : EntitySystem
         sw.Start();
         int count = 0;
         // the voices
-        var subComponent = typeof(LuaSystem).GetMethod("_subComponent", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        var handlerComponent = typeof(LuaSystem).GetMethod("HandleCompEvent", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        var subBroadcast = typeof(LuaSystem).GetMethod("_subBroadcast", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        var handlerBroadcast = typeof(LuaSystem).GetMethod("HandleBroadcastEvent", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        // no ByRef event support for now, sadge
-        var eventsTypes = _refl.GetAllChildren<EntityEventArgs>().Except(_refl.FindTypesWithAttribute<ByRefEventAttribute>());
+        MethodInfo GetLocalPrivateMethod(string methodName)
+            => typeof(LuaSystem).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var subComponent = GetLocalPrivateMethod("_subComponent");
+        var subBroadcast = GetLocalPrivateMethod("_subBroadcast");
+        var handlerComponent = GetLocalPrivateMethod("HandleCompEvent");
+        var handlerBroadcast = GetLocalPrivateMethod("HandleBroadcastEvent");
+        var subComponentRef = GetLocalPrivateMethod("_subComponentRef");
+        var subBroadcastRef = GetLocalPrivateMethod("_subBroadcastRef");
+        var handlerComponentRef = GetLocalPrivateMethod("HandleCompEventRef");
+        var handlerBroadcastRef = GetLocalPrivateMethod("HandleBroadcastEventRef");
+        var eventsTypes = _refl.GetAllChildren<EntityEventArgs>().Union(_refl.FindTypesWithAttribute<ByRefEventAttribute>());
         Dictionary<string, object> ctors = new();
         foreach (var eventType in eventsTypes)
         {
@@ -174,17 +211,39 @@ public sealed class LuaSystem : EntitySystem
                 Log.Warning($"Duplicate event name found for {eventType.Name} while doing Lua registrations. One of them will be unavailable for Lua scripting.");
                 continue;
             }
-        
-            subComponent.MakeGenericMethod(eventType).Invoke(this, new[] { Delegate.CreateDelegate(typeof(ComponentEventHandler<,>).MakeGenericType(typeof(LuaListenerComponent), eventType), this, handlerComponent.MakeGenericMethod(eventType)) });
-            subBroadcast.MakeGenericMethod(eventType).Invoke(this, new[] { Delegate.CreateDelegate(typeof(EntityEventHandler<>).MakeGenericType(eventType), this, handlerBroadcast.MakeGenericMethod(eventType)) });
+
+            if (eventType.IsDefined(typeof(ByRefEventAttribute)))
+            {
+                subComponentRef.MakeGenericMethod(eventType).Invoke(this, [ Delegate.CreateDelegate(typeof(ComponentEventRefHandler<,>).MakeGenericType(typeof(LuaListenerComponent), eventType), this, handlerComponentRef.MakeGenericMethod(eventType)) ]);
+                subBroadcastRef.MakeGenericMethod(eventType).Invoke(this, [ Delegate.CreateDelegate(typeof(EntityEventRefHandler<>).MakeGenericType(eventType), this, handlerBroadcastRef.MakeGenericMethod(eventType))]);
+            }
+            else
+            {
+                subComponent.MakeGenericMethod(eventType).Invoke(this, [ Delegate.CreateDelegate(typeof(ComponentEventHandler<,>).MakeGenericType(typeof(LuaListenerComponent), eventType), this, handlerComponent.MakeGenericMethod(eventType)) ]);
+                subBroadcast.MakeGenericMethod(eventType).Invoke(this, [ Delegate.CreateDelegate(typeof(EntityEventHandler<>).MakeGenericType(eventType), this, handlerBroadcast.MakeGenericMethod(eventType)) ]);
+            }
             UserData.RegisterType(eventType);
 
-
             var thisEventCtors = eventType.GetConstructors();
-            if(thisEventCtors.Length > 1)
-                for(int i = 1; i <= thisEventCtors.Length; i++)
-                    ctors.Add($"{eventType.Name}{i}", (params object[] args) => thisEventCtors[i].Invoke(args));
-
+            if (thisEventCtors.Length > 0)
+                for (int i = 0; i < thisEventCtors.Length; i++)
+                {
+                    var ctor = thisEventCtors[i];
+                    var ctorParams = ctor.GetParameters();
+                    StringBuilder sb = new();
+                    foreach (var param in ctorParams)
+                    {
+                        sb.Append('_');
+                        sb.Append(param.ParameterType.Name.ToLower());
+                    }
+                    var key = $"{eventType.Name}{sb.ToString()}";
+                    if (ctors.Keys.Contains(key))
+                    {
+                        Log.Warning($"Duplicate event constructor found for {eventType.Name} while doing Lua registrations. ({key}) One of them will be unavailable for Lua scripting.");
+                        continue;
+                    }
+                    ctors.Add(key, (params object[] args) => thisEventCtors[i].Invoke(args));
+                }
             //foreach (var ctor in eventType.GetConstructors())
             //{
             //    var pr = ctor.GetParameters();
@@ -199,17 +258,7 @@ public sealed class LuaSystem : EntitySystem
         _exposedEventCtors = ctors.ToFrozenDictionary();
     }
 
-
-    private delegate void HandleCompEventDelegate<TEvent>(EntityUid uid, LuaListenerComponent comp, TEvent args) where TEvent : notnull;
-    private delegate void HandleBroadcastEventDelegate<TEvent>(TEvent args) where TEvent : notnull;
-    //[UsedImplicitly]
-    //private void _subComponentRef<TEvent>(ComponentEventRefHandler<LuaListenerComponent, TEvent> handler) where TEvent : notnull
-    //    => SubscribeLocalEvent<LuaListenerComponent, TEvent>(handler);
-    //
-    //[UsedImplicitly]
-    //private void _subBroadcastRef<TEvent>(EntityEventRefHandler<TEvent> handler) where TEvent : notnull
-    //    => SubscribeLocalEvent<TEvent>(handler);
-
+    #region event handling stuff
     [UsedImplicitly]
     private void _subComponent<TEvent>(ComponentEventHandler<LuaListenerComponent, TEvent> handler) where TEvent : notnull
     => SubscribeLocalEvent<LuaListenerComponent, TEvent>(handler);
@@ -218,6 +267,14 @@ public sealed class LuaSystem : EntitySystem
     private void _subBroadcast<TEvent>(EntityEventHandler<TEvent> handler) where TEvent : notnull
     => SubscribeLocalEvent<TEvent>(handler);
 
+
+    [UsedImplicitly]
+    private void _subComponentRef<TEvent>(ComponentEventRefHandler<LuaListenerComponent, TEvent> handler) where TEvent : notnull
+    => SubscribeLocalEvent<LuaListenerComponent, TEvent>(handler);
+
+    [UsedImplicitly]
+    private void _subBroadcastRef<TEvent>(EntityEventRefHandler<TEvent> handler) where TEvent : notnull
+    => SubscribeLocalEvent<TEvent>(handler);
 
     [UsedImplicitly]
     private void HandleCompEvent<TEvent>(EntityUid uid, LuaListenerComponent comp, TEvent args) where TEvent : notnull
@@ -241,6 +298,38 @@ public sealed class LuaSystem : EntitySystem
             handler.Function.Call(args);
     }
 
+    [UsedImplicitly]
+    private void HandleCompEventRef<TEvent>(EntityUid uid, LuaListenerComponent comp, ref TEvent args) where TEvent : notnull
+    {
+        if (!_environments.TryGetValue(comp.EnvName, out var env))
+            return;
+
+        DynValue? ret = null;
+        var handler = env.Globals.Get($"{args.GetType().Name}Handler");
+        if (handler.Type == DataType.Function)
+            ret = handler.Function.Call(uid.Id, args);
+        if (ret?.Type != DataType.UserData || ret.UserData.Object.GetType() != args.GetType())
+            return;
+        args = (TEvent) ret.UserData.Object;
+    }
+
+    [UsedImplicitly]
+    private void HandleBroadcastEventRef<TEvent>(ref TEvent args) where TEvent : notnull
+    {
+        if (!_environments.TryGetValue("GlobalHandlers", out var env))
+            return;
+
+        TEvent newEv = args;
+        DynValue? ret = null;
+        var handler = env.Globals.Get($"{args.GetType().Name}BroadcastHandler");
+        if (handler.Type == DataType.Function)
+            ret = handler.Function.Call(args);
+        if (ret?.Type != DataType.UserData || ret.UserData.Object.GetType() != args.GetType())
+            return;
+        args = (TEvent)ret.UserData.Object;
+    }
+    #endregion
+
     private void InitExposedComponents()
     {
         var sw = new Stopwatch();
@@ -253,7 +342,7 @@ public sealed class LuaSystem : EntitySystem
                 continue;
 
             UserData.RegisterType(componentType);
-            compNames.Add(componentType.Name, componentType);
+            compNames.Add(componentType.Name.Substring(0, componentType.Name.Length - 9), componentType);
         }
         float elapsed = sw.ElapsedMilliseconds;
         _ComponentNames = compNames.ToFrozenDictionary();
@@ -263,21 +352,23 @@ public sealed class LuaSystem : EntitySystem
     private void InitExposedHelperMethods()
     {
         Dictionary<string, object> helpers = new();
-        helpers["Comp"] = LuaGetComp;
-        helpers["EnsureComp"] = LuaEnsureComp;
-        helpers["HasComp"] = LuaHasComp;
-        helpers["RemComp"] = LuaRemComp;
+        helpers["comp"] = LuaGetComp;
+        helpers["ensurecomp"] = LuaEnsureComp;
+        helpers["hascomp"] = LuaHasComp;
+        helpers["remcomp"] = LuaRemComp;
+        helpers["dirty"] = LuaDirty;
 
         _exposedHelperMethods = helpers.ToFrozenDictionary();
     }
 
+    string DoName(string name) => name.EndsWith("Component") ? name.Substring(0, name.Length - 9) : name;
+
     [UsedImplicitly]
     private Component? LuaGetComp(int id, string compName)
     {
-        var uid = new EntityUid(id);
-        if (TerminatingOrDeleted(uid) ||
-            !_ComponentNames.TryGetValue(compName, out var compType) ||
-            !EntityManager.TryGetComponent(uid, compType, out var comp) ||
+        var uid = ValidateEntUid(id);
+        var compType = GetCompType(compName);
+        if (!EntityManager.TryGetComponent(uid, compType, out var comp) ||
             comp.LifeStage > ComponentLifeStage.Running )
             return null;
 
@@ -289,22 +380,17 @@ public sealed class LuaSystem : EntitySystem
     [UsedImplicitly]
     private bool LuaHasComp(int id, string compName)
     {
-        var uid = new EntityUid(id);
-        if (TerminatingOrDeleted(uid) ||
-            !_ComponentNames.TryGetValue(compName, out var compType))
-            return false;
-
+        var uid = ValidateEntUid(id);
+        var compType = GetCompType(compName);
         return EntityManager.HasComponent(uid, compType);
     }
 
 
     [UsedImplicitly]
-    private Component? LuaEnsureComp(int id, string compName)
+    private Component LuaEnsureComp(int id, string compName)
     {
-        var uid = new EntityUid(id);
-        if (TerminatingOrDeleted(uid) ||
-            !_ComponentNames.TryGetValue(compName, out var compType))
-            return null;
+        var uid = ValidateEntUid(id);
+        var compType = GetCompType(compName);
 
         if (!EntityManager.TryGetComponent(uid, compType, out var comp))
         {
@@ -326,12 +412,40 @@ public sealed class LuaSystem : EntitySystem
     [UsedImplicitly]
     private bool LuaRemComp(int id, string compName)
     {
-        var uid = new EntityUid(id);
-        if (TerminatingOrDeleted(uid) ||
-            !_ComponentNames.TryGetValue(compName, out var compType))
-            return false;
-
+        var uid = ValidateEntUid(id);
+        var compType = GetCompType(compName);
         return EntityManager.RemoveComponent(uid, compType);
+    }
+    
+    [UsedImplicitly]
+    private bool LuaDirty(int id, string compName)
+    {
+        var uid = ValidateEntUid(id);
+        var compType = GetCompTypeNetworked(compName);
+        return EntityManager.RemoveComponent(uid, compType);
+    }
+
+    EntityUid ValidateEntUid(int id)
+    {
+        var uid = new EntityUid(id);
+        if (TerminatingOrDeleted(uid))
+            throw new ScriptRuntimeException($"EntityUid {id} points to an entity that is deleted, being deleting or never existed.");
+        return uid;
+    }
+
+    Type GetCompTypeNetworked(string compName)
+    {
+        var compType = GetCompType(compName);
+        if (!_ComponentNames[compName].HasCustomAttribute<NetworkedComponentAttribute>())
+            throw new ScriptRuntimeException($"{compName} is not networked.");
+        return compType;
+    }
+
+    Type GetCompType(string compName)
+    {
+        if (!_ComponentNames.TryGetValue(DoName(compName), out var compType))
+            throw new ScriptRuntimeException($"Unknown component {compName}.");
+        return compType;
     }
 
     private void InitCustomConversions()
@@ -354,7 +468,15 @@ public sealed class LuaSystem : EntitySystem
         object Vector2ToClr(DynValue v)
         {
             var t = v.Table;
-            return new Vector2(t.Get("x").Float, t.Get("y").Float);
+            float? xval = t.Get("x").TryFloat();
+            float? yval = t.Get("y").TryFloat();
+            if(xval is not null && yval is not null)
+                return new Vector2(xval.Value, yval.Value);
+            xval = t.Get(1).TryFloat();
+            yval = t.Get(2).TryFloat();
+            if(xval is not null && yval is not null)
+                return new Vector2(xval.Value, yval.Value);
+            throw new ScriptRuntimeException("Invalid vector");
         }
 
         object EntityCoordinatesToClr(DynValue v)
@@ -398,9 +520,56 @@ public sealed class LuaSystem : EntitySystem
         }
     }
     DynValue Num(double num) => DynValue.NewNumber(num);
+
 }
 
 
+public static class DynValueExt
+{
+
+    public static float? TryFloat(this DynValue val) => val.Type == DataType.Number ? val.Float : null;
+
+    public static string DynValueToString(this DynValue val, int indent = 0)
+    {
+        switch (val.Type)
+        {
+            case DataType.UserData:
+                return _indent(indent, $"(UD:{val.UserData.Object.GetType().ToString()})");
+            case DataType.Table:
+                return _indent(indent, val.Table.TableToString(indent+1));
+            default:
+                return _indent(indent, val.ToString());
+        }
+    }
+
+    private static string _indent(int i, string s) => $"{new string(' ', i * 2)}{s}";
+
+
+    public static string TableToString(this Table table, int indent = 0, params string[] ignoreKeys)
+    {
+        if (indent > 5)
+            return _indent(indent, "...");
+
+        var sb = new StringBuilder();
+        sb.Append(_indent(indent, "[\n"));
+        indent++;
+        foreach(var pair in table.Pairs)
+        {
+            if (pair.Key.CastToString() is string strkey && ignoreKeys.Contains(strkey))
+                continue;
+            sb.Append(_indent(indent, "["));
+            sb.Append(pair.Key.DynValueToString(indent));
+            sb.Append(" = ");
+            sb.Append(pair.Value.DynValueToString(indent));
+            sb.Append("],\n");
+        }
+        sb.Length-=2;
+        indent--;
+        sb.Append('\n');
+        sb.Append(_indent(indent, "]\n"));
+        return sb.ToString();
+    }
+}
 
 
 

@@ -40,6 +40,7 @@ using Robust.Shared.Replays;
 using Robust.Shared.Timing;
 using Content.Client._White.Overlays;
 using Content.Client._White.ItemSlotRenderer;
+using Robust.Client.Console.Commands;
 
 namespace Content.Client.Entry
 {
@@ -77,6 +78,7 @@ namespace Content.Client.Entry
         [Dependency] private readonly JoinQueueManager _joinQueue = default!;
         [Dependency] private readonly DiscordAuthManager _discordAuth = default!;
         [Dependency] private readonly DebugMonitorManager _debugMonitorManager = default!;
+        [Dependency] private readonly ILuaScriptClient _luaScriptClient = default!; // WWDP EDIT
 
         public override void Init()
         {
@@ -172,6 +174,7 @@ namespace Content.Client.Entry
             _documentParsingManager.Initialize();
             _joinQueue.Initialize();
             _discordAuth.Initialize();
+            _luaScriptClient.Initialize();
 
             _baseClient.RunLevelChanged += (_, args) =>
             {

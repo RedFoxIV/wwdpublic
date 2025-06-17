@@ -26,6 +26,7 @@ using Content.Shared.Administration.Managers;
 using Content.Shared.Chat;
 using Content.Shared.Players.PlayTimeTracking;
 using Content.Shared.Players.RateLimiting;
+using Robust.Client.Console.Commands;
 namespace Content.Client.IoC
 {
     internal static class ClientContentIoC

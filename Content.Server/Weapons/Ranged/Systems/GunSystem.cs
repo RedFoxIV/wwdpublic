@@ -274,7 +274,7 @@ public sealed partial class GunSystem : SharedGunSystem
 
         void CreateAndFireProjectiles(EntityUid ammoEnt, AmmoComponent ammoComp)
         {
-            RaiseLocalEvent(ammoEnt, new Content.Shared._White.Weapons.Ranged.Events.ProjectileShotEvent()); // WWDP
+            RaiseLocalEvent(ammoEnt, new Content.Shared._White.Weapons.Ranged.Events.ProjectileGotShotEvent()); // WWDP
 
             if (TryComp<ProjectileSpreadComponent>(ammoEnt, out var ammoSpreadComp))
             {

@@ -12,7 +12,7 @@ public sealed class TriggerOnShotSystem : EntitySystem
 
     public override void Initialize()
     {
-        SubscribeLocalEvent<OnShotTimerTriggerComponent, ProjectileShotEvent>(OnShot);
+        SubscribeLocalEvent<OnShotTimerTriggerComponent, ProjectileGotShotEvent>(OnShot);
         SubscribeLocalEvent<OnShotTimerTriggerComponent, ExaminedEvent>(OnExamined);
     }
 
@@ -22,7 +22,7 @@ public sealed class TriggerOnShotSystem : EntitySystem
             args.PushText(Loc.GetString("trigger-activated-when-shot", ("reduction", component.DelayReduction)), priority: -1);
     }
 
-    private void OnShot(EntityUid uid, OnShotTimerTriggerComponent component, ProjectileShotEvent args)
+    private void OnShot(EntityUid uid, OnShotTimerTriggerComponent component, ProjectileGotShotEvent args)
     {
         if (args.Handled || !TryComp<OnUseTimerTriggerComponent>(uid, out var triggerComponent))
             return;

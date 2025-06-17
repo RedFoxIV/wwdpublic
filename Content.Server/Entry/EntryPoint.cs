@@ -34,6 +34,7 @@ using Robust.Shared.ContentPack;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
+using Content.Server._White.Lua;
 
 namespace Content.Server.Entry
 {
@@ -146,6 +147,7 @@ namespace Content.Server.Entry
                 IoCManager.Resolve<IAdminManager>().Initialize();
                 IoCManager.Resolve<IAfkManager>().Initialize();
                 IoCManager.Resolve<RulesManager>().Initialize();
+                IoCManager.Resolve<ILuaScriptHost>().Initialize();
                 _euiManager.Initialize();
 
                 IoCManager.Resolve<IGameMapManager>().Initialize();

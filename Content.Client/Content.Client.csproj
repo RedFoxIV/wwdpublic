@@ -28,15 +28,8 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Spawners\" />
+    <Folder Include="_White\Lua\UI\" />
   </ItemGroup>
   <Import Project="..\RobustToolbox\MSBuild\Robust.Properties.targets" />
   <Import Project="..\RobustToolbox\MSBuild\XamlIL.targets" />
-  <ItemGroup>
-    <EmbeddedResource Remove="_white\lua\ui\LuaScriptingWindow.xaml" />
-  </ItemGroup>
-  <ItemGroup>
-    <AdditionalFiles Update="_White\Lua\UI\LuaScriptingWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </AdditionalFiles>
-  </ItemGroup>
 </Project>
