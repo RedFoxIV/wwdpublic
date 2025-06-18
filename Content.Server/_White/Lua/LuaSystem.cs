@@ -1,5 +1,6 @@
 using Content.Server.Speech;
 using Content.Shared.Doors;
+using Content.Shared.GameTicking;
 using JetBrains.Annotations;
 using JetBrains.FormatRipper.Pe;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -34,14 +35,21 @@ public sealed class LuaSystem : EntitySystem
     FrozenDictionary<string, object> _exposedEventCtors = default!;
     FrozenDictionary<string, object> _exposedHelperMethods = default!;
     FrozenDictionary<string, Type> _ComponentNames = default!;
-    CoreModules _defaultModules = CoreModules.Preset_SoftSandbox;
 
-    Dictionary<string, Script> _environments = new();
-    public IReadOnlyDictionary<string, Script> Environments => _environments;
+    Dictionary<string, object> _additionalGlobals = new();
 
+    Dictionary<string, LuaEnvironment> _environments = new();
+    public IReadOnlyDictionary<string, LuaEnvironment> Environments => _environments;
     string[] _baselineKeys = default!;
+
+    private void OnRoundCleanup(RoundRestartCleanupEvent ev)
+    {
+        _environments.Clear();
+    }
+
     public override void Initialize()
     {
+        SubscribeNetworkEvent<RoundRestartCleanupEvent>(OnRoundCleanup);
 
         InitExposedSystems();
         InitExposedServices();
@@ -49,45 +57,20 @@ public sealed class LuaSystem : EntitySystem
         InitExposedEvents();
         InitExposedHelperMethods();
         InitCustomConversions();
-
         UserData.RegisterType(typeof(ServerEntityManager));
 
         _luaHost.SystemCrutch(this);
 
-        var baseline = CreateScript();
-        List<string> keys = new();
-        foreach(var dynvalkey in baseline.Globals.Keys)
-        {
-            string strkey = dynvalkey.CastToString();
-            if (strkey is not null)
-                keys.Add(strkey);
-        }
-        _baselineKeys = keys.ToArray();
-
+        
     }
     public bool CreateEnvironment(string envName)
     {
         if (_environments.ContainsKey(envName))
             return false;
-        var env = CreateScript();
+
+        var env = new LuaEnvironment(envName, _additionalGlobals);
         _environments.Add(envName, env);
         return true;
-    }
-
-    private Script CreateScript()
-    {
-        var env = new Script(_defaultModules);
-        env.Globals["systems"] = _exposedSystems;
-        env.Globals["services"] = _exposedServices;
-        env.Globals["createevent"] = _exposedEventCtors;
-        env.Globals["entman"] = EntityManager;
-        //env.Options.DebugPrint = ()=>{};
-        foreach (var kvp in _exposedHelperMethods)
-        {
-            env.Globals[kvp.Key] = kvp.Value;
-        }
-
-        return env;
     }
 
     public bool DeleteEnvironment(string envName)
@@ -110,7 +93,7 @@ public sealed class LuaSystem : EntitySystem
         if (!_environments.TryGetValue(envName, out var env))
             return null;
 
-        return env.DoString(lua);
+        return env.Execute(lua);
     }
 
     public string? GetEnvironmentState(string envName)
@@ -119,7 +102,7 @@ public sealed class LuaSystem : EntitySystem
             return null;
 
 
-        return env.Globals.TableToString(ignoreKeys: _baselineKeys);
+        return env.CachedState;
     }
 
 
@@ -152,6 +135,7 @@ public sealed class LuaSystem : EntitySystem
         float elapsed = sw.ElapsedMilliseconds;
         Log.Info($"Registered {systems.Count} systems in {timestr(elapsed)} ({timestr(elapsed / systems.Count)} s avg.)");
         _exposedSystems = systems.ToFrozenDictionary();
+        _additionalGlobals.Add("systems", _exposedSystems);
     }
 
     private void InitExposedServices()
@@ -175,7 +159,7 @@ public sealed class LuaSystem : EntitySystem
         }
         float elapsed = sw.ElapsedMilliseconds;
         Log.Info($"Registered {services.Count} serivces in {timestr(elapsed)} ({timestr(elapsed / services.Count)} avg.)");
-
+        _additionalGlobals.Add("services", _exposedServices);
     }
 
     // This is where it gets worse.
@@ -256,6 +240,7 @@ public sealed class LuaSystem : EntitySystem
         float elapsed = sw.ElapsedMilliseconds;
         Log.Info($"Registered {count} events, their handlers and {ctors.Count} ctors in {timestr(elapsed)} ({timestr(elapsed / count)} avg.)");
         _exposedEventCtors = ctors.ToFrozenDictionary();
+        _additionalGlobals.Add("createevent", _exposedEventCtors);
     }
 
     #region event handling stuff
@@ -351,14 +336,15 @@ public sealed class LuaSystem : EntitySystem
 
     private void InitExposedHelperMethods()
     {
-        Dictionary<string, object> helpers = new();
-        helpers["comp"] = LuaGetComp;
-        helpers["ensurecomp"] = LuaEnsureComp;
-        helpers["hascomp"] = LuaHasComp;
-        helpers["remcomp"] = LuaRemComp;
-        helpers["dirty"] = LuaDirty;
+        _additionalGlobals.Add("comp", LuaGetComp);
+        _additionalGlobals.Add("ensurecomp", LuaEnsureComp);
+        _additionalGlobals.Add("hascomp", LuaHasComp);
+        _additionalGlobals.Add("remcomp", LuaRemComp);
+        _additionalGlobals.Add("dirty", LuaDirty);
+        _additionalGlobals.Add("raiselocalevent", LuaRaiseLocalEvent);
+        _additionalGlobals.Add("raisenetworkevent_entity", LuaRaiseNetworkEventEntity);
+        _additionalGlobals.Add("raisenetworkevent_filter", LuaRaiseNetworkEventFilter);
 
-        _exposedHelperMethods = helpers.ToFrozenDictionary();
     }
 
     string DoName(string name) => name.EndsWith("Component") ? name.Substring(0, name.Length - 9) : name;
@@ -423,6 +409,26 @@ public sealed class LuaSystem : EntitySystem
         var uid = ValidateEntUid(id);
         var compType = GetCompTypeNetworked(compName);
         return EntityManager.RemoveComponent(uid, compType);
+    }
+        
+    [UsedImplicitly]
+    private void LuaRaiseLocalEvent(int id, object args, bool broadcast = false)
+    {
+        var uid = ValidateEntUid(id);
+        RaiseLocalEvent(uid, args, broadcast);
+    }
+
+    [UsedImplicitly]
+    private void LuaRaiseNetworkEventFilter(EntityEventArgs args, Filter filter)
+    {
+        RaiseNetworkEvent(args, filter);
+    }
+
+    [UsedImplicitly]
+    private void LuaRaiseNetworkEventEntity(EntityEventArgs args, int id)
+    {
+        var uid = ValidateEntUid(id);
+        RaiseNetworkEvent(args, uid);
     }
 
     EntityUid ValidateEntUid(int id)
@@ -549,6 +555,9 @@ public static class DynValueExt
     {
         if (indent > 5)
             return _indent(indent, "...");
+        int entries = table.Pairs.Count();
+        if (entries > 512)
+            return _indent(indent, $"(bigtable ({entries} entries))");
 
         var sb = new StringBuilder();
         sb.Append(_indent(indent, "[\n"));
@@ -582,4 +591,55 @@ public sealed partial class LuaListenerComponent : Component
 
     [ViewVariables(VVAccess.ReadWrite)]
     public bool Enabled = true;
+}
+
+
+public sealed class LuaEnvironment
+{
+    const CoreModules _defaultModules = CoreModules.Preset_SoftSandbox;
+
+    private Script _script;
+    public Table Globals => _script.Globals;
+    public readonly string EnvironmentName;
+
+
+    private StringBuilder _outputLog = new();
+    public string OutputLog => _outputLog.ToString();
+    public string CachedState { get; private set; } = string.Empty;
+
+    public LuaEnvironment(string envName, Dictionary<string, object> additionalGlobals)
+    {
+        EnvironmentName = envName;
+        _script = new(_defaultModules);
+        foreach(var kvp in additionalGlobals)
+        {
+            _script.Globals[kvp.Key] = kvp.Value;
+        }
+    }
+
+    public void OutputLine(string str)
+    {
+        _outputLog.Append(str);
+        _outputLog.Append('\n');
+    }
+
+    public void RecacheState()
+    {
+        var sb = new StringBuilder();
+
+    }
+
+    public DynValue? Execute(string lua)
+    {
+        DynValue? ret = null;
+        try
+        {
+            ret = _script.DoString(lua, codeFriendlyName: EnvironmentName);
+        }
+        catch(ScriptRuntimeException e)
+        {
+            ret = DynValue.Nil;
+        }
+        return ret;
+    }
 }
