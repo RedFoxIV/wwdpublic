@@ -41,7 +41,9 @@ namespace Content.Shared.Movement.Components
         public GameTick LastInputTick;
         public ushort LastInputSubTick;
 
+        [ViewVariables]
         public Vector2 CurTickWalkMovement;
+        [ViewVariables]
         public Vector2 CurTickSprintMovement;
 
         public MoveButtons HeldMoveButtons = MoveButtons.None;
